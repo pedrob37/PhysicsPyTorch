@@ -92,6 +92,7 @@ def BespokeDataset(df, transform, patch_size, batch_seed):
         sampler=sampler,
         shuffle_subjects=False,
         shuffle_patches=False,
+        num_workers=24,
     )
 
     return patches_dataset
@@ -103,11 +104,9 @@ def reshuffle_csv(og_csv, batch_size):
     # Calculate some necessary variables
     batch_reshuffle_csv = pd.DataFrame({})
     num_images = len(og_csv)
-    print(num_images)
     batch_numbers = list(np.array(range(num_images // batch_size)) * batch_size)
     num_unique_subjects = og_csv.subject_id.nunique()
     unique_subject_ids = og_csv.subject_id.unique()
-    print(num_unique_subjects)
 
     # First, re-order within subjects so batches don't always contain same combination of physics parameters
     for sub_ID in unique_subject_ids:
@@ -148,16 +147,27 @@ def reshuffle_csv(og_csv, batch_size):
     return altered_basic_csv
 
 
-def visualise_batch_patches(loader, bs, comparisons=2):
+def visualise_batch_patches(loader, bs, ps, comparisons=2):
     print('Calculating tester...')
     assert comparisons <= batch_size
     next_data = next(iter(loader))
     batch_samples = random.sample(list(range(bs)), comparisons)
     import matplotlib.pyplot as plt
+    # Set up figure for ALL intra-batch comparisons
+    f, axarr = plt.subplots(3, comparisons)
     for comparison in range(comparisons):
-        example_batch_patch = np.squeeze(next_data['mri']['data'][batch_samples[comparison], :, :, 5])
-        plt.figure(comparison)
-        plt.imshow(example_batch_patch)
+        # print(f'Label shape is {next_data["seg"]["data"].shape}')
+        # print(f'Data shape is {next_data["mri"]["data"].shape}')
+        example_batch_patch = np.squeeze(next_data['mri']['data'][batch_samples[comparison], ..., int(ps/2)])
+        # For segmentation need to check that all classes (in 4D) have same patch that ALSO matches data
+        example_batch_patch2 = np.squeeze(next_data['seg']['data'][batch_samples[comparison], 0, ..., int(ps/2)])
+        example_batch_patch3 = np.squeeze(next_data['seg']['data'][batch_samples[comparison], 1, ..., int(ps/2)])
+        axarr[0, comparison].imshow(example_batch_patch)
+        axarr[0, comparison].axis('off')
+        axarr[1, comparison].imshow(example_batch_patch2)
+        axarr[1, comparison].axis('off')
+        axarr[2, comparison].imshow(example_batch_patch3)
+        axarr[2, comparison].axis('off')
     plt.show()
 
 
@@ -171,7 +181,7 @@ def feature_loss_func(volume1, volume2):
 
 def stratification_checker(input_volume):
     # Will only work for batch size 4 for now, but that comprises most experiments
-    return int((input_volume[0, ...] + input_volume[3, ...] - input_volume[1, ...], input_volume[2, ...]).sum())
+    return int(torch.sum(input_volume[0, ...] + input_volume[3, ...] - input_volume[1, ...] - input_volume[2, ...]))
 
 
 def calc_feature_loss(input_volume):
@@ -203,11 +213,15 @@ def calc_feature_loss(input_volume):
     return total_feature_loss
 
 
+def normalise_image(array):
+    return (array - np.min(array)) / (np.max(array) - np.min(array))
+
+
 os.environ['CUDA_VISIBLE_DEVICES'] = "0"
 torch.cuda.empty_cache()
 
 # Writer will output to ./runs/ directory by default
-log_dir = f'/home/pedro/PhysicsPyTorch/logger/preliminary_tests'
+log_dir = f'/home/pedro/PhysicsPyTorch/logger/preliminary_tests_physics'
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 SAVE_PATH = os.path.join(f'/home/pedro/PhysicsPyTorch/logger/preliminary_tests/models')
@@ -216,6 +230,26 @@ if not os.path.exists(SAVE_PATH):
 SAVE = True
 LOAD = True
 patch_test = False
+val_test = False
+
+# Physics specific parameters
+physics_flag = True
+physics_experiment_type = 'MPRAGE'
+physics_input_size = {'MPRAGE': 2,
+                      'SPGR': 6}
+
+
+def physics_preprocessing(physics_input, experiment_type):
+    if experiment_type == 'MPRAGE':
+        expo_physics = torch.exp(-physics_input)
+        overall_physics = torch.stack((physics, expo_physics), dim=1)
+    elif experiment_type == 'SPGR':
+        TR_expo_params = torch.unsqueeze(torch.exp(-physics_input[:, 0]), dim=1)
+        TE_expo_params = torch.unsqueeze(torch.exp(-physics_input[:, 1]), dim=1)
+        FA_sin_params = torch.unsqueeze(torch.sin(physics_input[:, 2] * 3.14159265 / 180), dim=1)
+        overall_physics = torch.stack((physics, TR_expo_params, TE_expo_params, FA_sin_params), dim=1)
+    return overall_physics
+
 
 # Check if SAVE_PATH is empty
 file_list = os.listdir(path=SAVE_PATH)
@@ -227,11 +261,11 @@ if LOAD and num_files > 0:
     model_files = glob.glob(os.path.join(SAVE_PATH, '*.pth'))
     latest_model_file = max(model_files, key=os.path.getctime)
     checkpoint = torch.load(latest_model_file, map_location=torch.device('cuda:0'))
-    print(f'Loading {latest_model_file}')
+    print(f'Loading {latest_model_file}!')
     loaded_epoch = checkpoint['epoch']
     loss = checkpoint['loss']
     running_iter = checkpoint['running_iter']
-    EPOCHS = 1000
+    EPOCHS = 1
 
     # Memory related variables
     batch_size = checkpoint['batch_size']
@@ -241,7 +275,7 @@ if LOAD and num_files > 0:
 else:
     running_iter = 0
     loaded_epoch = -1
-    EPOCHS = 100
+    EPOCHS = 1
 
     # Memory related variables
     patch_size = 80
@@ -250,6 +284,8 @@ else:
     samples_per_volume = 1
 
 # Stratification
+training_modes = ['standard', 'stratification']
+training_mode = 'standard'
 stratification_epsilon = 0.05
 
 # Some necessary variables
@@ -260,6 +296,7 @@ img_dir = '/data/Resampled_Data/Images/SS_GM_Images'  # '/nfs/home/pedro/COVID/D
 label_dir = '/data/Resampled_Data/Labels/GM_Labels'  # '/nfs/home/pedro/COVID/Labels/KCH_CXR_JPG.csv'
 print(img_dir)
 print(label_dir)
+val_batch_size = 4
 
 
 # Read csv + add directory to filenames
@@ -310,6 +347,7 @@ if not stacked_cv:
 # For aggregation
 overall_val_names = []
 overall_val_metric = []
+overall_gm_volumes = []
 
 # Early stopping
 best_val_dice = 0.0
@@ -319,13 +357,15 @@ print('\nStarting training!')
 for fold in range(num_folds):
     print('\nFOLD', fold)
     # Pre-loading sequence
-    model = nnUNet(1, 1)
+    model = nnUNet(1, 2, physics_flag=physics_flag, physics_input=physics_input_size[physics_experiment_type],
+                   physics_output=40)
     model = nn.DataParallel(model)
     optimizer = RangerLars(model.parameters())
 
     # Running lists
     running_val_names = []
     running_val_metric = []
+    running_gm_volumes = []
 
     # Specific fold writer
     writer = SummaryWriter(log_dir=os.path.join(log_dir, f'fold_{fold}'))
@@ -340,8 +380,10 @@ for fold in range(num_folds):
         # Get the validation entries from previous folds!
         running_val_names = checkpoint['running_val_names']
         running_val_metric = checkpoint['running_val_metric']
+        running_gm_volumes = checkpoint['running_gm_volumes']
         overall_val_names = checkpoint['overall_val_names']
         overall_val_metric = checkpoint['overall_val_metric']
+        overall_gm_volumes = checkpoint['overall_gm_volumes']
         # Ensure that no more loading is done for future folds
         LOAD = False
 
@@ -372,43 +414,64 @@ for fold in range(num_folds):
     model.cuda()
     print('\nStarting training!')
     for epoch in range(0, EPOCHS):
-        print('Training step')
+        print('Training Epoch')
         running_loss = 0.0
         model.train()
         train_acc = 0
-        total = 0
+        total_dice = 0
         new_seed = np.random.randint(10000)
 
         # Shuffle training and validation:
         new_train_df = reshuffle_csv(og_csv=train_df, batch_size=batch_size)
         new_val_df = reshuffle_csv(og_csv=val_df, batch_size=batch_size)
 
+        # Val test
+        if val_test:
+            new_train_df = new_train_df[:20]
+
         # And generate new loaders
         patches_training_set = BespokeDataset(new_train_df, training_transform, patch_size, batch_seed=new_seed)
-        train_loader = DataLoader(patches_training_set, batch_size=batch_size, num_workers=8, shuffle=False)
+        train_loader = DataLoader(patches_training_set, batch_size=batch_size, shuffle=False)
         patches_validation_set = BespokeDataset(new_val_df, validation_transform, patch_size, batch_seed=new_seed)
-        val_loader = DataLoader(patches_validation_set, batch_size=int(batch_size / 4), num_workers=8)
+        val_loader = DataLoader(patches_validation_set, batch_size=val_batch_size)
 
         # Patch test
         if patch_test and epoch == 0 and fold == 0:
-            visualise_batch_patches(train_loader, 4, 2)
-
+            visualise_batch_patches(loader=train_loader, bs=batch_size, ps=patch_size, comparisons=4)
         for i, sample in enumerate(train_loader):
             images = sample['mri']['data'].cuda()
             labels = sample['seg']['data'].cuda()
-            physics = sample['physics'].cuda()
+            physics = sample['physics'].cuda().float()
             names = sample['mri']['path']
             names = [os.path.basename(name) for name in names]
 
-            out, features_out = model(images)
+            # Pass images to the model
+            if physics_flag:
+                # Calculate physics extensions
+                processed_physics = physics_preprocessing(physics, physics_experiment_type)
+                print(f'Processed physics shape is {processed_physics.shape}')
+                out, features_out = model(images, processed_physics)
+            # print(f'Images shape is {images.shape}')
+            else:
+                out, features_out = model(images)
 
             # Need loss here
             eps = 1e-10
             data_loss = F.binary_cross_entropy_with_logits(out+eps, labels, reduction='mean')
-            total_feature_loss = 0.1 * calc_feature_loss(features_out)  # NOTE: This needs to be the feature tensor!
-            regulatory_ratio = loss / total_feature_loss
-            loss = data_loss + stratification_epsilon * total_feature_loss / (1 + stratification_checker(labels) * float(1e9)) ** 2
 
+            # Some checks for the labels
+            # print(f'{i}: Labels shape is {labels.shape}, the names are {names}')
+
+            if training_mode == 'standard':
+                loss = data_loss
+            elif training_mode == 'stratification':
+                total_feature_loss = 0.1 * calc_feature_loss(features_out)  # NOTE: This needs to be the feature tensor!
+                regulatory_ratio = data_loss / total_feature_loss
+                # print(f'The label directories are {sample}')
+                print(f'The stratification check value is {stratification_checker(labels)}')
+                loss = data_loss + stratification_epsilon * total_feature_loss / (1 + stratification_checker(labels) * float(1e9)) ** 2
+
+            # Softmax to convert to probabilities
             out = torch.softmax(out, dim=1)
 
             optimizer.zero_grad()
@@ -424,22 +487,25 @@ for fold in range(num_folds):
             # Normalise images
             images = images.cpu().detach().numpy()
             out = out.cpu().detach().numpy()
-            images = (images - np.min(images)) / (np.max(images) - np.min(images))
-            out = (out - np.min(out)) / (np.max(out) - np.min(out))
+            images = normalise_image(images)
+            out = normalise_image(out)
+            labels = labels.cpu().detach().numpy()
             if running_iter % 50 == 0:
                 writer.add_scalar('Loss/train', loss.item(), running_iter)
-                img2tensorboard.add_animated_gif_no_channels(writer=writer, image_tensor=images[0, ...],
-                                                             tag='Visuals/Images', max_out=patch_size//4, scale_factor=255)
-                img2tensorboard.add_animated_gif_no_channels(writer=writer, image_tensor=labels[0, ...].cpu().detach().numpy(),
-                                                             tag='Visuals/Labels', max_out=patch_size//4, scale_factor=255)
-                img2tensorboard.add_animated_gif_no_channels(writer=writer, image_tensor=out[0, ...],
-                                                             tag='Visuals/Output', max_out=patch_size//4, scale_factor=255)
+                img2tensorboard.add_animated_gif(writer=writer, image_tensor=images[0, ...],
+                                                 tag=f'Visuals/Images_Fold_{fold}', max_out=patch_size//2,
+                                                 scale_factor=255, global_step=running_iter)
+                img2tensorboard.add_animated_gif(writer=writer, image_tensor=labels[0, 0, ...][None, ...],
+                                                 tag=f'Visuals/Labels_Fold_{fold}', max_out=patch_size//2,
+                                                 scale_factor=255, global_step=running_iter)
+                img2tensorboard.add_animated_gif(writer=writer, image_tensor=out[0, 0, ...][None, ...],
+                                                 tag=f'Visuals/Output_Fold_{fold}', max_out=patch_size//2,
+                                                 scale_factor=255, global_step=running_iter)
 
             print("iter: {}, Loss: {}".format(running_iter, loss.item()))
             running_iter += 1
 
-        print("Epoch: {}, Loss: {},\n Train Accuracy: {}".format(epoch, running_loss, train_acc / total))
-        running_iter = 0
+        print("Epoch: {}, Loss: {},\n Train Dice: Not implemented".format(epoch, running_loss))
 
         print('Validation step')
         model.eval()
@@ -447,40 +513,85 @@ for fold in range(num_folds):
         running_loss = 0
         # correct = 0
         val_counter = 0
-        total = 0
         names_collector = []
         metric_collector = []
+        gm_volumes_collector = []
 
         with torch.no_grad():
             for val_sample in val_loader:
                 val_images = val_sample['mri']['data'].squeeze().cuda()
+                # Readjust dimensions to match expected shape for network
+                # if len(val_images.shape) == 3:
+                #     val_images = torch.unsqueeze(torch.unsqueeze(val_images, 0), 0)
+                # elif len(val_images.shape) == 4:
+                #     val_images = torch.unsqueeze(val_images, 0)
                 val_labels = val_sample['seg']['data'].squeeze().cuda()
-                val_physics = val_sample['physics'].squeeze().cuda()
+                # print(f'val_images shape is {val_images.shape}')
+                # print(f'val_labels shape is {val_labels.shape}')
+                # Readjust dimensions to match expected shape
+                if len(val_labels.shape) == 4:
+                    val_labels = torch.unsqueeze(val_labels, 1)
+                if len(val_images.shape) == 4:
+                    val_images = torch.unsqueeze(val_images, 1)
+                val_physics = val_sample['physics'].squeeze().cuda().float()
                 val_names = val_sample['mri']['path']
                 val_names = [os.path.basename(val_name) for val_name in val_names]
 
-                out = model(val_images)
+                # Pass images to the model
+                if physics_flag:
+                    # Calculate physics extensions
+                    val_processed_physics = physics_preprocessing(val_physics, physics_experiment_type)
+                    out, features_out = model(val_images, val_processed_physics)
+                # print(f'Images shape is {images.shape}')
+                else:
+                    out, features_out = model(val_images)
 
-                val_loss = F.binary_cross_entropy_with_logits(out, val_labels, reduction="mean")
+                val_data_loss = F.binary_cross_entropy_with_logits(out, val_labels, reduction="mean")
+
+                # Loss depends on training mode
+                if training_mode == 'standard':
+                    val_loss = val_data_loss
+                elif training_mode == 'stratification':
+                    val_total_feature_loss = 0.1 * calc_feature_loss(
+                        features_out)  # NOTE: This needs to be the feature tensor!
+                    regulatory_ratio = val_data_loss / val_total_feature_loss
+                    val_loss = data_loss + stratification_epsilon * total_feature_loss / (
+                                1 + stratification_checker(labels) * float(1e9)) ** 2
+
+                # print(f"out val shape is {out.shape}")  # Checking for batch dimension inclusion or not
                 out = torch.softmax(out, dim=1)
+                gm_out = out[:, 0, ...]
 
                 running_loss += val_loss.item()
 
                 # Metric calculation
-                dice_performance = val_metric.forward(out, labels)
-                metric_collector += dice_performance
+                dice_performance = val_metric.forward(out, val_labels)
+                gm_volume = gm_out.view(4, -1).sum(1)
+                metric_collector += [dice_performance.tolist()]
                 names_collector += val_names
+                gm_volumes_collector += gm_volume
 
-                val_counter += 1
+                # Convert to numpy arrays
+                val_images = val_images.cpu().detach().numpy()
+                val_labels = val_labels.cpu().detach().numpy()
+                val_images = normalise_image(val_images)
+                out = out.cpu().detach().numpy()
+                out = normalise_image(out)
+
+                val_counter += val_batch_size
 
         # Write to tensorboard
         writer.add_scalar('Loss/val', running_loss / val_counter, running_iter)
-        img2tensorboard.add_animated_gif_no_channels(writer=writer, image_tensor=val_images[0, ...],
-                                                     tag='Validation/Images', max_out=patch_size // 4, scale_factor=255)
-        img2tensorboard.add_animated_gif_no_channels(writer=writer, image_tensor=val_labels[0, ...],
-                                                     tag='Validation/Labels', max_out=patch_size // 4, scale_factor=255)
-        img2tensorboard.add_animated_gif_no_channels(writer=writer, image_tensor=out[0, ...],
-                                                     tag='Validation/Output', max_out=patch_size // 4, scale_factor=255)
+        writer.add_scalar('Loss/dice_val', np.mean(metric_collector) / val_counter, running_iter)
+        img2tensorboard.add_animated_gif(writer=writer, image_tensor=val_images[0, ...],
+                                         tag=f'Validation/Images_Fold_{fold}', max_out=patch_size // 4,
+                                         scale_factor=255, global_step=running_iter)
+        img2tensorboard.add_animated_gif(writer=writer, image_tensor=val_labels[0, 0, ...][None, ...],
+                                         tag=f'Validation/Labels_Fold_{fold}', max_out=patch_size // 4,
+                                         scale_factor=255, global_step=running_iter)
+        img2tensorboard.add_animated_gif(writer=writer, image_tensor=out[0, 0, ...][None, ...],
+                                         tag=f'Validation/Output_Fold_{fold}', max_out=patch_size // 4,
+                                         scale_factor=255, global_step=running_iter)
 
         # Check if current val dice is better than previous best
         true_dice = np.mean(metric_collector)
@@ -494,7 +605,8 @@ for fold in range(num_folds):
 
         # Aggregation
         running_val_metric.append(true_dice)
-        running_val_names.append(val_names)
+        running_val_names.append(names_collector)
+        running_gm_volumes.append(gm_volumes_collector)
 
         # Save model
         if SAVE and append_string == 'best':
@@ -509,6 +621,8 @@ for fold in range(num_folds):
                         'patch_size': patch_size,
                         'running_val_names': running_val_names,
                         'running_val_metric': running_val_metric,
+                        'running_gm_volumes': running_gm_volumes,
+                        'overall_gm_volumes': overall_gm_volumes,
                         'overall_val_names': overall_val_names,
                         'overall_val_metric': overall_val_metric}, MODEL_PATH)
 
@@ -518,4 +632,45 @@ for fold in range(num_folds):
             print(f'The best epoch is Epoch {best_epoch}')
             overall_val_metric.append(running_val_metric[best_epoch])
             overall_val_names.extend(running_val_names[best_epoch])
+            overall_gm_volumes.extend(running_gm_volumes[best_epoch])
             break
+
+    # Now that this fold's training has ended, want starting points of next fold to reset
+    latest_epoch = -1
+    latest_fold = 0
+    running_iter = 0
+
+## Totals: What to collect after training has finished
+# Dice for all validation? Volumes and COVs?
+
+overall_val_metric = np.array(overall_val_metric)
+overall_gm_volumes = np.array(overall_gm_volumes)
+overall_subject_ids = [int(vn[0].split('_')[2]) for vn in overall_val_names]
+
+# Folds analysis
+print('Names', len(overall_val_names), 'Dice', len(overall_val_metric), 'GM volumes', len(overall_gm_volumes))
+
+# Folds Dice
+print('Overall Dice:', np.mean(overall_val_metric), 'std:', np.std(overall_val_metric))
+
+sub = pd.DataFrame({"Filename": overall_val_names,
+                    "subject_id": overall_subject_ids,
+                    "Dice": overall_val_metric.tolist(),
+                    "GM_volumes": overall_gm_volumes})
+
+sub.to_csv(os.path.join(SAVE_PATH, 'dice_gm_volumes.csv'), index=False)
+
+# CoVs
+subject_CoVs = []
+subject_dice = []
+for ID in range(sub.subject_id.nunique()):
+    # CoV, see: https://en.wikipedia.org/wiki/Coefficient_of_variation
+    subject_CoV = np.std(sub[sub.subject_id == ID].GM_volumes) / np.mean(sub[sub.subject_id == ID].GM_volumes)
+    subject_CoVs.append(subject_CoV)
+    subject_dice.append(np.mean(sub[sub.subject_id == ID].Dice))
+    print(f'The CoV for subject {ID} is {subject_CoV}')
+cov_sub = pd.DataFrame({"subject_id": list(range(sub.subject_id.nunique())),
+                        "subject_dice": subject_dice,
+                        "subject_CoVs": subject_CoVs})
+print(f"The mean and std of all subject CoVs is: {np.mean(subject_CoVs)}, {np.std(subject_CoVs)}")
+print('Finished!')
