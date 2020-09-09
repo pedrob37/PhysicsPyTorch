@@ -61,9 +61,9 @@ class RandomBiasField(RandomTransform):
             # print(f'The image name is {image_name}')
             image_dict[DATA] = image_dict[DATA] * torch.from_numpy(bias_field)
         sample.add_transform(self, random_parameters_images_dict)
-        print(image_dict)
-        print(sample)
-        print(f'This is what the sample is {sample}')
+        # print(image_dict)
+        # print(sample)
+        # print(f'This is what the sample is {sample}')
         return sample
 
     @staticmethod
