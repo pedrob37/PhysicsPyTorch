@@ -509,6 +509,8 @@ for fold in range(num_folds):
             names = sample['mri']['path']
             names = [os.path.basename(name) for name in names]
 
+            print(images.shape, labels.shape)
+
             # Pass images to the model
             if physics_flag:
                 # Calculate physics extensions

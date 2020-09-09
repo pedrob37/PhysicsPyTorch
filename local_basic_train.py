@@ -1,7 +1,7 @@
 import numpy as np
 import monai
-import torchio
-from torchio import Queue
+import porchio
+from porchio import Queue
 from torchvision import datasets, transforms, models
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
@@ -28,9 +28,9 @@ from over9000 import RangerLars
 class BadDataset:
     def __init__(self, df, transform):
         self.df = df
-        self.loader = torchio.ImagesDataset
+        self.loader = porchio.ImagesDataset
         self.transform = transform
-        self.sampler = torchio.data.UniformSampler(patch_size=80)
+        self.sampler = porchio.data.UniformSampler(patch_size=80)
 
     def __getitem__(self, index):
         # These names are arbitrary
@@ -42,19 +42,19 @@ class BadDataset:
         for (image_path, label_path, subject_physics) in zip(self.df.Filename, self.df.Label_Filename,
                                                              self.df.subject_physics):
             subject_dict = {
-                MRI: torchio.ScalarImage(image_path),
-                SEG: torchio.LabelMap(label_path),
+                MRI: porchio.ScalarImage(image_path),
+                SEG: porchio.LabelMap(label_path),
                 PHYSICS: subject_physics
             }
-            subject = torchio.Subject(subject_dict)
+            subject = porchio.Subject(subject_dict)
             subjects.append(subject)
         this_dataset = self.loader(subjects, self.transform)
 
-        patches_dataset = torchio.Queue(
+        patches_dataset = porchio.Queue(
             subjects_dataset=this_dataset,
             max_length=queue_length,
             samples_per_volume=samples_per_volume,
-            sampler=torchio.sampler.UniformSampler(patch_size),
+            sampler=porchio.sampler.UniformSampler(patch_size),
             shuffle_subjects=False,
             shuffle_patches=False,
         )
@@ -66,8 +66,8 @@ class BadDataset:
 
 
 def BespokeDataset(df, transform, patch_size, batch_seed):
-    loader = torchio.ImagesDataset
-    sampler = torchio.data.UniformSampler(patch_size=patch_size, batch_seed=batch_seed)
+    loader = porchio.ImagesDataset
+    sampler = porchio.data.UniformSampler(patch_size=patch_size, batch_seed=batch_seed)
 
     # These names are arbitrary
     MRI = 'mri'
@@ -77,15 +77,15 @@ def BespokeDataset(df, transform, patch_size, batch_seed):
     subjects = []
     for (image_path, label_path, subject_physics) in zip(df.Filename, df.Label_Filename, df.subject_physics):
         subject_dict = {
-            MRI: torchio.ScalarImage(image_path),
-            SEG: torchio.LabelMap(label_path),
+            MRI: porchio.ScalarImage(image_path),
+            SEG: porchio.LabelMap(label_path),
             PHYSICS: subject_physics
         }
-        subject = torchio.Subject(subject_dict)
+        subject = porchio.Subject(subject_dict)
         subjects.append(subject)
     this_dataset = loader(subjects, transform)
 
-    patches_dataset = torchio.Queue(
+    patches_dataset = porchio.Queue(
         subjects_dataset=this_dataset,
         max_length=queue_length,
         samples_per_volume=samples_per_volume,
@@ -285,7 +285,7 @@ else:
 
 # Stratification
 training_modes = ['standard', 'stratification']
-training_mode = 'standard'
+training_mode = 'stratification'
 stratification_epsilon = 0.05
 
 # Some necessary variables
@@ -307,28 +307,28 @@ df['Label_Filename'] = label_dir + '/' + 'Label_' + df['Label_Filename'].astype(
 num_folds = df.fold.nunique()
 
 # Transforms
-training_transform = torchio.Compose([
-    # torchio.RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
-    # torchio.RandomMotion(),
-    # torchio.HistogramStandardization({MRI: landmarks}),
-    torchio.RandomBiasField(),
-    torchio.ZNormalization(masking_method=None),
-    torchio.RandomNoise(),
-    # torchio.ToCanonical(),
-    # torchio.Resample((4, 4, 4)),
-    # torchio.CropOrPad((48, 60, 48)),
-    # torchio.RandomFlip(axes=(0,)),
-    # torchio.OneOf({
-    #     torchio.RandomAffine(): 0.8,
-    #     torchio.RandomElasticDeformation(): 0.2,}),
+training_transform = porchio.Compose([
+    # porchio.RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
+    # porchio.RandomMotion(),
+    # porchio.HistogramStandardization({MRI: landmarks}),
+    porchio.RandomBiasField(),
+    porchio.ZNormalization(masking_method=None),
+    porchio.RandomNoise(),
+    # porchio.ToCanonical(),
+    # porchio.Resample((4, 4, 4)),
+    # porchio.CropOrPad((48, 60, 48)),
+    # porchio.RandomFlip(axes=(0,)),
+    # porchio.OneOf({
+    #     porchio.RandomAffine(): 0.8,
+    #     porchio.RandomElasticDeformation(): 0.2,}),
 ])
 
-validation_transform = torchio.Compose([
-    # torchio.HistogramStandardization({MRI: landmarks}),
-    torchio.ZNormalization(masking_method=None),
-    # torchio.ToCanonical(),
-    # torchio.Resample((4, 4, 4)),
-    # torchio.CropOrPad((48, 60, 48)),
+validation_transform = porchio.Compose([
+    # porchio.HistogramStandardization({MRI: landmarks}),
+    porchio.ZNormalization(masking_method=None),
+    # porchio.ToCanonical(),
+    # porchio.Resample((4, 4, 4)),
+    # porchio.CropOrPad((48, 60, 48)),
 ])
 
 # CUDA variables
@@ -449,7 +449,7 @@ for fold in range(num_folds):
             if physics_flag:
                 # Calculate physics extensions
                 processed_physics = physics_preprocessing(physics, physics_experiment_type)
-                print(f'Processed physics shape is {processed_physics.shape}')
+                # print(f'Processed physics shape is {processed_physics.shape}')
                 out, features_out = model(images, processed_physics)
             # print(f'Images shape is {images.shape}')
             else:
