@@ -1,5 +1,6 @@
 from torchvision import datasets, transforms
 from base import BaseDataLoader
+from .datasets import NiftiDataset
 
 
 class MnistDataLoader(BaseDataLoader):
@@ -13,4 +14,13 @@ class MnistDataLoader(BaseDataLoader):
         ])
         self.data_dir = data_dir
         self.dataset = datasets.MNIST(self.data_dir, train=training, download=True, transform=trsfm)
+        super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
+
+
+class NiftiDataLoader(BaseDataLoader):
+    """
+    Load images in .nii/.nii.gz format along with segmentation masks
+    """
+    def __init__(self, dataset, batch_size, shuffle,  validation_split=0.1, num_workers=1, training=True):
+        self.dataset = dataset
         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)

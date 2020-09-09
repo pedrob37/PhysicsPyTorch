@@ -5,9 +5,12 @@ import numpy as np
 import data_loader.data_loaders as module_data
 import model.loss as module_loss
 import model.metric as module_metric
-import model.model as module_arch
+import model.mnist_model as module_arch
+import data_loader.datasets as module_datasets
+import torch.utils.data as module_dataloader
 from parse_config import ConfigParser
 from trainer import Trainer
+from monai.data import list_data_collate
 
 
 # fix random seeds for reproducibility
@@ -16,6 +19,7 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
+
 
 def main(config):
     logger = config.get_logger('train')
@@ -31,6 +35,16 @@ def main(config):
     # get function handles of loss and metrics
     criterion = getattr(module_loss, config['loss'])
     metrics = [getattr(module_metric, met) for met in config['metrics']]
+
+    # set up dataset
+    dataset = config.init_obj('dataset', module_datasets,
+                              joint_training=config['joint_training'])
+    val_dataset = config.init_obj('val_dataset', module_datasets)
+
+    data_loader = config.init_obj('data_loader', module_dataloader, dataset=dataset, collate_fn=list_data_collate,
+                                  pin_memory=torch.cuda.is_available())
+    valid_data_loader = config.init_obj('val_data_loader', module_dataloader, dataset=val_dataset,
+                                        collate_fn=list_data_collate, pin_memory=torch.cuda.is_available())
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())

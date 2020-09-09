@@ -1,0 +1,116 @@
+
+{
+  "name": "joint",
+  "n_gpu": 1,
+  "arch": {
+    "type": "nnUnet",
+    "args": {
+      "input_channels": 1,
+      "num_pool": 3
+    }
+  },
+  "joint_training":false,
+  "label_mapper": {
+    "type": "LabelMapper",
+    "args": {
+      "mapping_level": 6,
+      "mapping_csv_path": "assets/label_scheme/hierarchy_training.csv",
+      "indices_to_ignore": [-1]
+    }
+  },
+  "dataset": {
+    "type": "NiftiDataset",
+    "args": {
+      "image_dir": ["/home/mark/projects/gifnet/data/neuromorphometrics/train/images",
+                    "/home/mark/projects/gifnet/data/adni2_subset_cropped/train/images"],
+      "label_dir": ["/home/mark/projects/gifnet/data/neuromorphometrics/train/labels",
+                    "/home/mark/projects/gifnet/data/adni2_subset_cropped/train/labels"],
+      "resize_to": -1,
+      "patch_size": [110, 110, 110],
+      "label_supersets": true,
+      "validation": false,
+      "val_split": [0.1, 0.025]
+    }
+  },
+  "val_dataset": {
+    "type": "NiftiDataset",
+    "args": {
+      "image_dir": ["/home/mark/projects/gifnet/data/neuromorphometrics/train/images",
+                    "/home/mark/projects/gifnet/data/adni2_subset_cropped/train/images"],
+      "label_dir": ["/home/mark/projects/gifnet/data/neuromorphometrics/train/labels",
+                    "/home/mark/projects/gifnet/data/adni2_subset_cropped/train/labels"],
+      "resize_to": -1,
+      "label_supersets": true,
+      "validation": true,
+      "val_split": [0.1, 0.025]
+    }
+  },
+  "test_dataset": {
+    "type": "NiftiDataset",
+    "args": {
+      "image_dir": ["/home/mark/projects/gifnet/data/neuromorphometrics/test/images",
+                    "/home/mark/projects/gifnet/data/adni2_subset_cropped/test/images"],
+      "label_dir": ["/home/mark/projects/gifnet/data/neuromorphometrics/test/labels",
+                    "/home/mark/projects/gifnet/data/adni2_subset_cropped/test/labels"],
+      "resize_to": -1,
+      "label_supersets": true,
+      "validation": true,
+      "val_split": [1,1]
+    }
+  },
+  "data_loader": {
+    "type": "DataLoader",
+    "args": {
+      "batch_size": 1,
+      "shuffle": true,
+      "num_workers": 4
+    }
+  },
+  "val_data_loader": {
+    "type": "DataLoader",
+    "args": {
+      "batch_size": 1,
+      "shuffle": false,
+      "num_workers": 1
+    }
+  },
+  "optimizer": {
+    "type": "Adam",
+    "args": {
+      "lr": 0.004,
+      "weight_decay": 0,
+      "amsgrad": true
+    }
+  },
+  "loss": {
+    "type": "tree_loss_yolo",
+    "args": {
+    }
+  },
+  "metrics": [
+    {
+    "type": "dice",
+    "args": {
+    }
+  }
+  ],
+  "lr_scheduler": {
+    "type": "StepLR",
+    "args": {
+      "step_size": 100,
+      "gamma": 0.1
+    }
+  },
+  "trainer": {
+    "epochs": 200,
+    "save_dir": "../experiments/",
+    "save_period": 5,
+    "verbosity": 2,
+    "monitor": "min val_loss",
+    "early_stop": 30,
+    "tensorboard": true
+  },
+  "use_apex": false,
+  "cpu_sliding_window":false,
+  "cpu_post_inference":false
+}
