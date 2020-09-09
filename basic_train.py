@@ -248,7 +248,7 @@ def normalise_image(array):
 log_dir = f'/nfs/home/pedro/PhysicsPyTorch/logs/{arguments.job_name}'
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
-SAVE_PATH = os.path.join(f'/nfs/home/pedro/PhysicsPyTorch/logs/{arguments.job_name}')
+SAVE_PATH = os.path.join(f'/nfs/home/pedro/PhysicsPyTorch/models/{arguments.job_name}')
 if not os.path.exists(SAVE_PATH):
     os.makedirs(SAVE_PATH)
 SAVE = True
