@@ -80,6 +80,8 @@ class nnUNet(nn.Module):
     def __init__(self, in_channel, out_channel, physics_flag=False, physics_input=None, physics_output=0):
         # Encode
         super(nnUNet, self).__init__()
+        if not physics_flag:
+            physics_output = 0
         self.conv_encode1 = self.contracting_block(in_channels=in_channel, out_channels=30)
         self.conv_maxpool1 = torch.nn.MaxPool3d(kernel_size=2)
         self.conv_encode2 = self.contracting_block(30+physics_output, 60)

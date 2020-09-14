@@ -18,6 +18,7 @@ import random
 from ignite.handlers import EarlyStopping
 from model.metric import DiceLoss
 import glob
+import time
 
 import monai.visualize.img2tensorboard as img2tensorboard
 import sys
@@ -265,7 +266,7 @@ if LOAD and num_files > 0:
     loaded_epoch = checkpoint['epoch']
     loss = checkpoint['loss']
     running_iter = checkpoint['running_iter']
-    EPOCHS = 1
+    EPOCHS = 100
 
     # Memory related variables
     batch_size = checkpoint['batch_size']
@@ -275,7 +276,7 @@ if LOAD and num_files > 0:
 else:
     running_iter = 0
     loaded_epoch = -1
-    EPOCHS = 1
+    EPOCHS = 100
 
     # Memory related variables
     patch_size = 80
@@ -349,9 +350,6 @@ overall_val_names = []
 overall_val_metric = []
 overall_gm_volumes = []
 
-# Early stopping
-best_val_dice = 0.0
-best_counter = 0
 
 print('\nStarting training!')
 for fold in range(num_folds):
@@ -435,6 +433,10 @@ for fold in range(num_folds):
         patches_validation_set = BespokeDataset(new_val_df, validation_transform, patch_size, batch_seed=new_seed)
         val_loader = DataLoader(patches_validation_set, batch_size=val_batch_size)
 
+        # Early stopping
+        best_val_dice = 0.0
+        best_counter = 0
+
         # Patch test
         if patch_test and epoch == 0 and fold == 0:
             visualise_batch_patches(loader=train_loader, bs=batch_size, ps=patch_size, comparisons=4)
@@ -446,6 +448,7 @@ for fold in range(num_folds):
             names = [os.path.basename(name) for name in names]
 
             # Pass images to the model
+            start = time.time()
             if physics_flag:
                 # Calculate physics extensions
                 processed_physics = physics_preprocessing(physics, physics_experiment_type)
@@ -464,12 +467,16 @@ for fold in range(num_folds):
 
             if training_mode == 'standard':
                 loss = data_loss
+                print(f"iter: {running_iter}, Loss: {loss.item():.4f},"
+                      f"                                           ({(time.time() - start):.3f}s)")
             elif training_mode == 'stratification':
                 total_feature_loss = 0.1 * calc_feature_loss(features_out)  # NOTE: This needs to be the feature tensor!
                 regulatory_ratio = data_loss / total_feature_loss
                 # print(f'The label directories are {sample}')
                 print(f'The stratification check value is {stratification_checker(labels)}')
                 loss = data_loss + stratification_epsilon * total_feature_loss / (1 + stratification_checker(labels) * float(1e9)) ** 2
+                print(f"iter: {running_iter}, Loss: {loss.item():.4f}, strat: {stratification_checker(labels):.3f}"
+                      f"                                    ({(time.time() - start):.3f} s)")
 
             # Softmax to convert to probabilities
             out = torch.softmax(out, dim=1)
@@ -502,7 +509,6 @@ for fold in range(num_folds):
                                                  tag=f'Visuals/Output_Fold_{fold}', max_out=patch_size//2,
                                                  scale_factor=255, global_step=running_iter)
 
-            print("iter: {}, Loss: {}".format(running_iter, loss.item()))
             running_iter += 1
 
         print("Epoch: {}, Loss: {},\n Train Dice: Not implemented".format(epoch, running_loss))
@@ -556,7 +562,7 @@ for fold in range(num_folds):
                         features_out)  # NOTE: This needs to be the feature tensor!
                     regulatory_ratio = val_data_loss / val_total_feature_loss
                     val_loss = data_loss + stratification_epsilon * total_feature_loss / (
-                                1 + stratification_checker(labels) * float(1e9)) ** 2
+                                1 + stratification_checker(val_labels) * float(1e9)) ** 2
 
                 # print(f"out val shape is {out.shape}")  # Checking for batch dimension inclusion or not
                 out = torch.softmax(out, dim=1)
