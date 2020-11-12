@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of "vanilla" transforms for the model output tensors
-https://github.com/Project-MONAI/MONAI/wiki/MONAI_Design
+https://github.com/Project-ponai/ponai/wiki/ponai_Design
 """
 
 from typing import Optional, Callable
@@ -18,10 +18,10 @@ from typing import Optional, Callable
 import torch
 import torch.nn.functional as F
 
-from monai.transforms.compose import Transform
-from monai.networks import one_hot
-from monai.transforms.utils import get_largest_connected_component_mask
-from monai.utils import ensure_tuple
+from ponai.transforms.compose import Transform
+from ponai.networks import one_hot
+from ponai.transforms.utils import get_largest_connected_component_mask
+from ponai.utils import ensure_tuple
 
 
 class SplitChannel(Transform):

@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,9 +14,9 @@ from typing import Union
 import numpy as np
 import torch
 
-from monai.data.png_writer import write_png
-from monai.data.utils import create_file_basename
-from monai.utils import InterpolateMode
+from ponai.data.png_writer import write_png
+from ponai.data.utils import create_file_basename
+from ponai.utils import InterpolateMode
 
 
 class PNGSaver:
@@ -79,7 +79,7 @@ class PNGSaver:
             ValueError: PNG image should only have 1, 3 or 4 channels.
 
         See Also
-            :py:meth:`monai.data.png_writer.write_png`
+            :py:meth:`ponai.data.png_writer.write_png`
         """
         filename = meta_data["filename_or_obj"] if meta_data else str(self._data_index)
         self._data_index += 1

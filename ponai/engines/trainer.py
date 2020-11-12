@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,11 +13,11 @@ from typing import Callable, Optional
 
 import torch
 
-from monai.inferers import SimpleInferer
-from monai.utils import exact_version, optional_import
-from monai.engines.utils import CommonKeys as Keys
-from monai.engines.utils import default_prepare_batch
-from monai.engines.workflow import Workflow
+from ponai.inferers import SimpleInferer
+from ponai.utils import exact_version, optional_import
+from ponai.engines.utils import CommonKeys as Keys
+from ponai.engines.utils import default_prepare_batch
+from ponai.engines.workflow import Workflow
 
 Engine, _ = optional_import("ignite.engine", "0.3.0", exact_version, "Engine")
 Metric, _ = optional_import("ignite.metrics", "0.3.0", exact_version, "Metric")

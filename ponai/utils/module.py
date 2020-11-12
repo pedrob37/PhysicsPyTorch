@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -56,7 +56,7 @@ def load_submodules(basemod, load_all: bool = True, exclude_pattern: str = "(.*[
     return submodules
 
 
-@export("monai.utils")
+@export("ponai.utils")
 def get_full_type_name(typeobj):
     module = typeobj.__module__
     if module is None or module == str.__class__.__module__:
@@ -103,7 +103,7 @@ def optional_import(
     Args:
         module: name of the module to be imported.
         version: version string used by the version_checker.
-        version_checker: a callable to check the module version, Defaults to monai.utils.min_version.
+        version_checker: a callable to check the module version, Defaults to ponai.utils.min_version.
         name: a non-module attribute (such as method/class) to import from the imported module.
         descriptor: a format string for the final error message when using a not imported module.
         version_args: additional parameters to the version checker.
@@ -175,7 +175,7 @@ def optional_import(
             _default_msg = (
                 f"Optional import: {msg}."
                 + "\n\nFor details about installing the optional dependencies, please visit:"
-                + "\n    https://docs.monai.io/en/latest/installation.html#installing-the-recommended-dependencies"
+                + "\n    https://docs.ponai.io/en/latest/installation.html#installing-the-recommended-dependencies"
             )
             if tb is None:
                 self._exception = AttributeError(_default_msg)

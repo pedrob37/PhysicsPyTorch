@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of "vanilla" transforms for intensity adjustment
-https://github.com/Project-MONAI/MONAI/wiki/MONAI_Design
+https://github.com/Project-ponai/ponai/wiki/ponai_Design
 """
 
 from typing import Optional, Tuple
@@ -18,8 +18,8 @@ from warnings import warn
 
 import numpy as np
 
-from monai.transforms.compose import Transform, Randomizable
-from monai.transforms.utils import rescale_array
+from ponai.transforms.compose import Transform, Randomizable
+from ponai.transforms.utils import rescale_array
 
 
 class RandGaussianNoise(Randomizable, Transform):

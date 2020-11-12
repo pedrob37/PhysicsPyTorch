@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,8 +13,8 @@ from typing import Callable, Optional, Sequence, Union
 
 import torch
 
-from monai.metrics import DiceMetric
-from monai.utils import exact_version, optional_import, MetricReduction
+from ponai.metrics import DiceMetric
+from ponai.utils import exact_version, optional_import, MetricReduction
 
 NotComputableError, _ = optional_import("ignite.exceptions", "0.3.0", exact_version, "NotComputableError")
 Metric, _ = optional_import("ignite.metrics", "0.3.0", exact_version, "Metric")
@@ -52,7 +52,7 @@ class MeanDice(Metric):
             device (torch.device): device specification in case of distributed computation usage.
 
         See also:
-            :py:meth:`monai.metrics.meandice.compute_meandice`
+            :py:meth:`ponai.metrics.meandice.compute_meandice`
         """
         super().__init__(output_transform, device=device)
         self.dice = DiceMetric(

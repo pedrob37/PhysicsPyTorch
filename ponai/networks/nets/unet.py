@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,13 +11,13 @@
 
 import torch.nn as nn
 
-from monai.networks.blocks.convolutions import Convolution, ResidualUnit
-from monai.networks.layers.factories import Norm, Act
-from monai.networks.layers.simplelayers import SkipConnection
-from monai.utils import export, alias
+from ponai.networks.blocks.convolutions import Convolution, ResidualUnit
+from ponai.networks.layers.factories import Norm, Act
+from ponai.networks.layers.simplelayers import SkipConnection
+from ponai.utils import export, alias
 
 
-@export("monai.networks.nets")
+@export("ponai.networks.nets")
 @alias("Unet")
 class UNet(nn.Module):
     def __init__(

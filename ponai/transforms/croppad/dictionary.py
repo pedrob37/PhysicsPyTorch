@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,26 +10,26 @@
 # limitations under the License.
 """
 A collection of dictionary-based wrappers around the "vanilla" transforms for crop and pad operations
-defined in :py:class:`monai.transforms.croppad.array`.
+defined in :py:class:`ponai.transforms.croppad.array`.
 
 Class names are ended with 'd' to denote dictionary-based transforms.
 """
 
 from typing import Callable, Optional, Sequence, Union
 
-from monai.config import IndexSelection, KeysCollection
-from monai.data.utils import get_random_patch, get_valid_patch_size
-from monai.transforms.compose import MapTransform, Randomizable
-from monai.transforms.croppad.array import CenterSpatialCrop, DivisiblePad, SpatialCrop, SpatialPad, BorderPad
-from monai.transforms.utils import generate_pos_neg_label_crop_centers, generate_spatial_bounding_box
-from monai.utils import ensure_tuple, ensure_tuple_rep, fall_back_tuple, NumpyPadMode, Method
+from ponai.config import IndexSelection, KeysCollection
+from ponai.data.utils import get_random_patch, get_valid_patch_size
+from ponai.transforms.compose import MapTransform, Randomizable
+from ponai.transforms.croppad.array import CenterSpatialCrop, DivisiblePad, SpatialCrop, SpatialPad, BorderPad
+from ponai.transforms.utils import generate_pos_neg_label_crop_centers, generate_spatial_bounding_box
+from ponai.utils import ensure_tuple, ensure_tuple_rep, fall_back_tuple, NumpyPadMode, Method
 
 NumpyPadModeSequence = Union[Sequence[Union[NumpyPadMode, str]], NumpyPadMode, str]
 
 
 class SpatialPadd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.SpatialPad`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.SpatialPad`.
     Performs padding to the data, symmetric for all sides or all on one side for each dimension.
     """
 
@@ -43,7 +43,7 @@ class SpatialPadd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             spatial_size (list): the spatial size of output data after padding.
                 If its components have non-positive values, the corresponding size of input image will be used.
             method: {``"symmetric"``, ``"end"``}
@@ -69,7 +69,7 @@ class SpatialPadd(MapTransform):
 class BorderPadd(MapTransform):
     """
     Pad the input data by adding specified borders to every dimension.
-    Dictionary-based wrapper of :py:class:`monai.transforms.BorderPad`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.BorderPad`.
     """
 
     def __init__(
@@ -78,7 +78,7 @@ class BorderPadd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             spatial_border (int or sequence of int): specified size for every spatial border. it can be 3 shapes:
 
                 - single int number, pad all the borders with the same size.
@@ -111,14 +111,14 @@ class BorderPadd(MapTransform):
 class DivisiblePadd(MapTransform):
     """
     Pad the input data, so that the spatial sizes are divisible by `k`.
-    Dictionary-based wrapper of :py:class:`monai.transforms.DivisiblePad`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.DivisiblePad`.
     """
 
     def __init__(self, keys: KeysCollection, k, mode: NumpyPadModeSequence = NumpyPadMode.CONSTANT):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             k (int or sequence of int): the target k for each spatial dimension.
                 if `k` is negative or 0, the original size is preserved.
                 if `k` is an int, the same `k` be applied to all the input spatial dimensions.
@@ -128,7 +128,7 @@ class DivisiblePadd(MapTransform):
                 See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
                 It also can be a sequence of string, each element corresponds to a key in ``keys``.
 
-        See also :py:class:`monai.transforms.SpatialPad`
+        See also :py:class:`ponai.transforms.SpatialPad`
 
         """
         super().__init__(keys)
@@ -144,7 +144,7 @@ class DivisiblePadd(MapTransform):
 
 class SpatialCropd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.SpatialCrop`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.SpatialCrop`.
     Either a spatial center and size must be provided, or alternatively if center and size
     are not provided, the start and end coordinates of the ROI must be provided.
     """
@@ -153,7 +153,7 @@ class SpatialCropd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             roi_center (list or tuple): voxel coordinates for center of the crop ROI.
             roi_size (list or tuple): size of the crop ROI.
             roi_start (list or tuple): voxel coordinates for start of the crop ROI.
@@ -171,11 +171,11 @@ class SpatialCropd(MapTransform):
 
 class CenterSpatialCropd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.CenterSpatialCrop`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.CenterSpatialCrop`.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: monai.transforms.MapTransform
+            See also: ponai.transforms.MapTransform
         roi_size (list, tuple): the size of the crop region e.g. [224,224,128]
             If its components have non-positive values, the corresponding size of input image will be used.
     """
@@ -193,14 +193,14 @@ class CenterSpatialCropd(MapTransform):
 
 class RandSpatialCropd(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandSpatialCrop`.
+    Dictionary-based version :py:class:`ponai.transforms.RandSpatialCrop`.
     Crop image with random size or specific size ROI. It can crop at a random position as
     center or at the image center. And allows to set the minimum size to limit the randomly
     generated ROI. Suppose all the expected fields specified by `keys` have same shape.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: monai.transforms.MapTransform
+            See also: ponai.transforms.MapTransform
         roi_size (list, tuple): if `random_size` is True, it specifies the minimum crop region.
             if `random_size` is False, it specifies the expected ROI size to crop. e.g. [224, 224, 128]
             If its components have non-positive values, the corresponding size of input image will be used.
@@ -239,7 +239,7 @@ class RandSpatialCropd(Randomizable, MapTransform):
 
 class RandSpatialCropSamplesd(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandSpatialCropSamples`.
+    Dictionary-based version :py:class:`ponai.transforms.RandSpatialCropSamples`.
     Crop image with random size or specific size ROI to generate a list of N samples.
     It can crop at a random position as center or at the image center. And allows to set
     the minimum size to limit the randomly generated ROI. Suppose all the expected fields
@@ -248,7 +248,7 @@ class RandSpatialCropSamplesd(Randomizable, MapTransform):
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: monai.transforms.MapTransform
+            See also: ponai.transforms.MapTransform
         roi_size (list, tuple): if `random_size` is True, the spatial size of the minimum crop region.
             if `random_size` is False, specify the expected ROI size to crop. e.g. [224, 224, 128]
         num_samples: number of samples (crop regions) to take in the returned list.
@@ -275,7 +275,7 @@ class RandSpatialCropSamplesd(Randomizable, MapTransform):
 
 class CropForegroundd(MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.CropForeground`.
+    Dictionary-based version :py:class:`ponai.transforms.CropForeground`.
     Crop only the foreground object of the expected images.
     The typical usage is to help training and evaluation if the valid part is small in the whole medical image.
     The valid part can be determined by any field in the data with `source_key`, for example:
@@ -297,7 +297,7 @@ class CropForegroundd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             source_key: data source to generate the bounding box of foreground, can be image or label, etc.
             select_fn: function to select expected foreground, default is to select values > 0.
             channel_indexes: if defined, select foreground only on the specified channels
@@ -323,14 +323,14 @@ class CropForegroundd(MapTransform):
 
 class RandCropByPosNegLabeld(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandCropByPosNegLabel`.
+    Dictionary-based version :py:class:`ponai.transforms.RandCropByPosNegLabel`.
     Crop random fixed sized regions with the center being a foreground or background voxel
     based on the Pos Neg Ratio.
     And will return a list of dictionaries for all the cropped images.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: :py:class:`monai.transforms.compose.MapTransform`
+            See also: :py:class:`ponai.transforms.compose.MapTransform`
         label_key: name of key for label image, this will be used for finding foreground/background.
         spatial_size (sequence of int): the spatial size of the crop region e.g. [224, 224, 128].
             If its components have non-positive values, the corresponding size of `data[label_key]` will be used.

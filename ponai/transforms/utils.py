@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -16,8 +16,8 @@ from typing import Optional, Callable
 import torch
 import numpy as np
 
-from monai.config import IndexSelection
-from monai.utils import ensure_tuple, ensure_tuple_size, fall_back_tuple, optional_import, min_version
+from ponai.config import IndexSelection
+from ponai.utils import ensure_tuple, ensure_tuple_size, fall_back_tuple, optional_import, min_version
 
 measure, _ = optional_import("skimage.measure", "0.14.2", min_version)
 

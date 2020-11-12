@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of "vanilla" transforms for IO functions
-https://github.com/Project-MONAI/MONAI/wiki/MONAI_Design
+https://github.com/Project-ponai/ponai/wiki/ponai_Design
 """
 
 from typing import Optional
@@ -19,9 +19,9 @@ import numpy as np
 
 from torch.utils.data._utils.collate import np_str_obj_array_pattern
 
-from monai.data.utils import correct_nifti_header_if_necessary
-from monai.transforms.compose import Transform
-from monai.utils import optional_import, ensure_tuple
+from ponai.data.utils import correct_nifti_header_if_necessary
+from ponai.transforms.compose import Transform
+from ponai.utils import optional_import, ensure_tuple
 
 nib, _ = optional_import("nibabel")
 Image, _ = optional_import("PIL.Image")

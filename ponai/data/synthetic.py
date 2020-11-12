@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,7 +11,7 @@
 
 import numpy as np
 
-from monai.transforms.utils import rescale_array
+from ponai.transforms.utils import rescale_array
 
 __all__ = ["create_test_image_2d", "create_test_image_3d"]
 

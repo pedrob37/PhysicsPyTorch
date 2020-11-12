@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,7 +12,7 @@
 import torch
 import torch.nn as nn
 
-from monai.networks.layers.factories import Act, Pool
+from ponai.networks.layers.factories import Act, Pool
 
 
 class ChannelSELayer(nn.Module):
@@ -78,7 +78,7 @@ class ResidualSELayer(ChannelSELayer):
             acti_type_1: defaults to "leakyrelu".
             acti_type_2: defaults to "relu".
 
-        See also ::py:class:`monai.networks.blocks.ChannelSELayer`.
+        See also ::py:class:`ponai.networks.blocks.ChannelSELayer`.
         """
         super().__init__(
             spatial_dims=spatial_dims, in_channels=in_channels, r=r, acti_type_1=acti_type_1, acti_type_2=acti_type_2

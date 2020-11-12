@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,7 +15,7 @@ import torch
 import torch.nn.functional as F
 from torch.nn.modules.loss import _WeightedLoss
 
-from monai.utils import LossReduction
+from ponai.utils import LossReduction
 
 
 class FocalLoss(_WeightedLoss):
@@ -49,7 +49,7 @@ class FocalLoss(_WeightedLoss):
             .. code-block:: python
 
                 import torch
-                from monai.losses import FocalLoss
+                from ponai.losses import FocalLoss
 
                 pred = torch.tensor([[1, 0], [0, 1], [1, 0]], dtype=torch.float32)
                 grnd = torch.tensor([[0], [1], [0]], dtype=torch.int64)

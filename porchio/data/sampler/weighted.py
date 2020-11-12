@@ -72,6 +72,7 @@ class WeightedSampler(RandomSampler):
         sample.check_consistent_shape()
         # print(self.patch_size)
         # print(sample.spatial_shape)
+        # raise RuntimeWarning(f'The spatial shape is {sample.spatial_shape}')
         if np.any(self.patch_size > sample.spatial_shape):
             message = (
                 f'Patch size {tuple(self.patch_size)} cannot be'

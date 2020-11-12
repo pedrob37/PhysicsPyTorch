@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,9 +12,9 @@
 import torch
 import torch.nn as nn
 
-from monai.networks.blocks.convolutions import Convolution
-from monai.networks.layers import same_padding
-from monai.networks.layers.factories import Act, Conv, Norm
+from ponai.networks.blocks.convolutions import Convolution
+from ponai.networks.layers import same_padding
+from ponai.networks.layers.factories import Act, Conv, Norm
 
 
 class SimpleASPP(nn.Module):

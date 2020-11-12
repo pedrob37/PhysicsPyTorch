@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of dictionary-based wrappers around the "vanilla" transforms for IO functions
-defined in :py:class:`monai.transforms.io.array`.
+defined in :py:class:`ponai.transforms.io.array`.
 
 Class names are ended with 'd' to denote dictionary-based transforms.
 """
@@ -19,14 +19,14 @@ from typing import Optional
 
 import numpy as np
 
-from monai.config import KeysCollection
-from monai.transforms.compose import MapTransform
-from monai.transforms.io.array import LoadNifti, LoadPNG
+from ponai.config import KeysCollection
+from ponai.transforms.compose import MapTransform
+from ponai.transforms.io.array import LoadNifti, LoadPNG
 
 
 class LoadNiftid(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.LoadNifti`,
+    Dictionary-based wrapper of :py:class:`ponai.transforms.LoadNifti`,
     must load image and metadata together. If loading a list of files in one key,
     stack them together and add a new dimension as the first dimension, and use the
     meta data of the first image to represent the stacked result. Note that the affine
@@ -45,7 +45,7 @@ class LoadNiftid(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             as_closest_canonical: if True, load the image as closest to canonical axis format.
             dtype (np.dtype, optional): if not None convert the loaded image to this data type.
             meta_key_postfix: use `key_{postfix}` to to store meta data of the nifti image,
@@ -81,7 +81,7 @@ class LoadNiftid(MapTransform):
 
 class LoadPNGd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.LoadPNG`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.LoadPNG`.
     """
 
     def __init__(
@@ -94,7 +94,7 @@ class LoadPNGd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             dtype (np.dtype, optional): if not None convert the loaded image to this data type.
             meta_key_postfix: use `key_{postfix}` to to store meta data of the nifti image,
                 default is `meta_dict`. The meta data is a dictionary object.

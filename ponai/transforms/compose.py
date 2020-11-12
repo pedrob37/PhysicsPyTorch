@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-A collection of generic interfaces for MONAI transforms.
+A collection of generic interfaces for ponai transforms.
 """
 
 import warnings
@@ -17,9 +17,9 @@ from typing import Hashable, Optional, Tuple, Any
 from abc import ABC, abstractmethod
 import numpy as np
 
-from monai.config import KeysCollection
-from monai.utils import ensure_tuple, get_seed
-from monai.transforms.utils import apply_transform
+from ponai.config import KeysCollection
+from ponai.utils import ensure_tuple, get_seed
+from ponai.transforms.utils import apply_transform
 
 
 class Transform(ABC):
@@ -38,7 +38,7 @@ class Transform(ABC):
 
     See Also
 
-        :py:class:`monai.transforms.Compose`
+        :py:class:`ponai.transforms.Compose`
     """
 
     @abstractmethod
@@ -177,7 +177,7 @@ class Compose(Randomizable):
     `set_determinism()`.
 
     When using the pass-through dictionary operation, you can make use of
-    :class:`monai.transforms.adaptors.adaptor` to wrap transforms that don't conform
+    :class:`ponai.transforms.adaptors.adaptor` to wrap transforms that don't conform
     to the requirements. This approach allows you to use transforms from
     otherwise incompatible libraries with minimal additional work.
 
@@ -232,7 +232,7 @@ class Compose(Randomizable):
 
 class MapTransform(Transform):
     """
-    A subclass of :py:class:`monai.transforms.Transform` with an assumption
+    A subclass of :py:class:`ponai.transforms.Transform` with an assumption
     that the ``data`` input of ``self.__call__`` is a MutableMapping such as ``dict``.
 
     The ``keys`` parameter will be used to get and set the actual data

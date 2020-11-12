@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,9 +14,9 @@ from typing import Optional, Union
 import torch.nn as nn
 import torch.nn.functional as F
 
-from monai.networks.layers.convutils import same_padding
-from monai.networks.layers.factories import Conv, Dropout, Norm
-from monai.utils import Normalisation, Activation, ChannelMatching
+from ponai.networks.layers.convutils import same_padding
+from ponai.networks.layers.factories import Conv, Dropout, Norm
+from ponai.utils import Normalisation, Activation, ChannelMatching
 
 SUPPORTED_NORM = {
     Normalisation.BATCH: lambda spatial_dims: Norm[Norm.BATCH, spatial_dims],

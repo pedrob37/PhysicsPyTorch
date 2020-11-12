@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of "vanilla" transforms for utility functions
-https://github.com/Project-MONAI/MONAI/wiki/MONAI_Design
+https://github.com/Project-ponai/ponai/wiki/ponai_Design
 """
 
 import time
@@ -20,7 +20,7 @@ import logging
 import numpy as np
 import torch
 
-from monai.transforms.compose import Transform
+from ponai.transforms.compose import Transform
 
 
 class Identity(Transform):
@@ -42,7 +42,7 @@ class AsChannelFirst(Transform):
     """
     Change the channel dimension of the image to the first dimension.
 
-    Most of the image transformations in ``monai.transforms``
+    Most of the image transformations in ``ponai.transforms``
     assume the input image is in the channel-first format, which has the shape
     (num_channels, spatial_dim_1[, spatial_dim_2, ...]).
 
@@ -74,7 +74,7 @@ class AsChannelLast(Transform):
 
     This transform could be used to convert, for example, a channel-first image array in shape
     (num_channels, spatial_dim_1[, spatial_dim_2, ...]) into the channel-last format,
-    so that MONAI transforms can construct a chain with other 3rd party transforms together.
+    so that ponai transforms can construct a chain with other 3rd party transforms together.
 
     Args:
         channel_dim: which dimension of input image is the channel, default is the first dimension.
@@ -95,7 +95,7 @@ class AddChannel(Transform):
     """
     Adds a 1-length channel dimension to the input image.
 
-    Most of the image transformations in ``monai.transforms``
+    Most of the image transformations in ``ponai.transforms``
     assumes the input image is in the channel-first format, which has the shape
     (num_channels, spatial_dim_1[, spatial_dim_2, ...]).
 

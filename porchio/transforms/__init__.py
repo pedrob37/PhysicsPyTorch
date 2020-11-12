@@ -21,6 +21,8 @@ from .augmentation.intensity import RandomMotion
 from .augmentation.intensity import RandomGhosting
 from .augmentation.intensity import RandomBiasField
 from .augmentation.intensity import RandomLabelsToImage
+from .augmentation.intensity import RandomMPRAGE
+from .augmentation.intensity import RandomSPGR
 
 # Preprocessing
 from .preprocessing import Pad

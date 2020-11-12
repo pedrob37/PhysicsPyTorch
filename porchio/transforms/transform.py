@@ -93,6 +93,7 @@ class Transform(ABC):
 
         for image in transformed.get_images(intensity_only=False):
             ndim = image[DATA].ndim
+            # print(f'The image shape is {image[DATA].shape}')
             assert ndim == 4, f'Output of {self.name} is {ndim}D'
 
         if is_tensor:

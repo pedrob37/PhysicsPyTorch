@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,9 +12,9 @@
 from typing import Callable, Optional
 import torch
 
-from monai.transforms import apply_transform
-from monai.utils import exact_version, optional_import, ensure_tuple
-from monai.engines.utils import default_prepare_batch
+from ponai.transforms import apply_transform
+from ponai.utils import exact_version, optional_import, ensure_tuple
+from ponai.engines.utils import default_prepare_batch
 
 Engine, _ = optional_import("ignite.engine", "0.3.0", exact_version, "Engine")
 State, _ = optional_import("ignite.engine", "0.3.0", exact_version, "State")

@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,7 +13,7 @@ import os
 import sys
 from collections import OrderedDict
 
-import monai
+import ponai
 import numpy as np
 import torch
 
@@ -65,7 +65,7 @@ def get_config_values():
     """
     output = OrderedDict()
 
-    output["MONAI"] = monai.__version__
+    output["ponai"] = ponai.__version__
     output["Python"] = sys.version.replace("\n", " ")
     output["Numpy"] = np.version.full_version
     output["Pytorch"] = torch.__version__
@@ -101,7 +101,7 @@ def print_config(file=sys.stdout):
         print(f"{k} version: {v}", file=file, flush=True)
     print("\nFor details about installing the optional dependencies, please visit:", file=file, flush=True)
     print(
-        "    https://docs.monai.io/en/latest/installation.html#installing-the-recommended-dependencies\n",
+        "    https://docs.ponai.io/en/latest/installation.html#installing-the-recommended-dependencies\n",
         file=file,
         flush=True,
     )

@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,17 +10,17 @@
 # limitations under the License.
 """
 A collection of dictionary-based wrappers around the "vanilla" transforms for model output tensors
-defined in :py:class:`monai.transforms.utility.array`.
+defined in :py:class:`ponai.transforms.utility.array`.
 
 Class names are ended with 'd' to denote dictionary-based transforms.
 """
 
 from typing import Optional, Union, Sequence, Callable
 
-from monai.config import KeysCollection
-from monai.utils import ensure_tuple_rep
-from monai.transforms.compose import MapTransform
-from monai.transforms.post.array import (
+from ponai.config import KeysCollection
+from ponai.utils import ensure_tuple_rep
+from ponai.transforms.compose import MapTransform
+from ponai.transforms.post.array import (
     SplitChannel,
     Activations,
     AsDiscrete,
@@ -31,7 +31,7 @@ from monai.transforms.post.array import (
 
 class SplitChanneld(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.SplitChannel`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.SplitChannel`.
     All the input specified by `keys` should be splitted into same count of data.
 
     """
@@ -46,7 +46,7 @@ class SplitChanneld(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             output_postfixes: the postfixes to construct keys to store split data.
                 for example: if the key of input data is `pred` and split 2 classes, the output
                 data keys will be: pred_(output_postfixes[0]), pred_(output_postfixes[1])
@@ -78,7 +78,7 @@ class SplitChanneld(MapTransform):
 
 class Activationsd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.AddActivations`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.AddActivations`.
     Add activation layers to the input data specified by `keys`.
     """
 
@@ -92,7 +92,7 @@ class Activationsd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to model output and label.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             sigmoid: whether to execute sigmoid function on model output before transform.
                 it also can be a sequence of bool, each element corresponds to a key in ``keys``.
             softmax: whether to execute softmax function on model output before transform.
@@ -117,7 +117,7 @@ class Activationsd(MapTransform):
 
 class AsDiscreted(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.AsDiscrete`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.AsDiscrete`.
     """
 
     def __init__(
@@ -132,7 +132,7 @@ class AsDiscreted(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to model output and label.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             argmax: whether to execute argmax function on input data before transform.
                 it also can be a sequence of bool, each element corresponds to a key in ``keys``.
             to_onehot: whether to convert input data into the one-hot format. Defaults to False.
@@ -169,7 +169,7 @@ class AsDiscreted(MapTransform):
 
 class KeepLargestConnectedComponentd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:monai.transforms.KeepLargestConnectedComponent.
+    Dictionary-based wrapper of :py:class:ponai.transforms.KeepLargestConnectedComponent.
     """
 
     def __init__(
@@ -182,7 +182,7 @@ class KeepLargestConnectedComponentd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             applied_labels: Labels for applying the connected component on.
                 If only one channel. The pixel whose value is not in this list will remain unchanged.
                 If the data is in one-hot format, this is the channel indexes to apply transform.
@@ -206,14 +206,14 @@ class KeepLargestConnectedComponentd(MapTransform):
 
 class LabelToContourd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:monai.transforms.LabelToContour.
+    Dictionary-based wrapper of :py:class:ponai.transforms.LabelToContour.
     """
 
     def __init__(self, keys: KeysCollection, kernel_type: str = "Laplace"):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             kernel_type: the method applied to do edge detection, default is "Laplace".
 
         """

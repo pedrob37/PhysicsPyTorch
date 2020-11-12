@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of dictionary-based wrappers around the "vanilla" transforms for intensity adjustment
-defined in :py:class:`monai.transforms.intensity.array`.
+defined in :py:class:`ponai.transforms.intensity.array`.
 
 Class names are ended with 'd' to denote dictionary-based transforms.
 """
@@ -19,9 +19,9 @@ from typing import Union, Optional, Tuple
 
 import numpy as np
 
-from monai.config import KeysCollection
-from monai.transforms.compose import MapTransform, Randomizable
-from monai.transforms.intensity.array import (
+from ponai.config import KeysCollection
+from ponai.transforms.compose import MapTransform, Randomizable
+from ponai.transforms.intensity.array import (
     NormalizeIntensity,
     ScaleIntensityRange,
     ThresholdIntensity,
@@ -29,18 +29,18 @@ from monai.transforms.intensity.array import (
     ShiftIntensity,
     ScaleIntensity,
     ScaleIntensityRangePercentiles,
-    Whitening
+    # Whitening
 )
 
 
 class RandGaussianNoised(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandGaussianNoise`.
+    Dictionary-based version :py:class:`ponai.transforms.RandGaussianNoise`.
     Add Gaussian noise to image. This transform assumes all the expected fields have same shape.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: :py:class:`monai.transforms.compose.MapTransform`
+            See also: :py:class:`ponai.transforms.compose.MapTransform`
         prob: Probability to add Gaussian noise.
         mean (float or array of floats): Mean or “centre” of the distribution.
         std: Standard deviation (spread) of distribution.
@@ -72,14 +72,14 @@ class RandGaussianNoised(Randomizable, MapTransform):
 
 class ShiftIntensityd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.ShiftIntensity`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.ShiftIntensity`.
     """
 
     def __init__(self, keys: KeysCollection, offset: float):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             offset: offset value to shift the intensity of image.
         """
         super().__init__(keys)
@@ -94,14 +94,14 @@ class ShiftIntensityd(MapTransform):
 
 class RandShiftIntensityd(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandShiftIntensity`.
+    Dictionary-based version :py:class:`ponai.transforms.RandShiftIntensity`.
     """
 
     def __init__(self, keys: KeysCollection, offsets: Union[Tuple[float, float], float], prob: float = 0.1):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             offsets: offset range to randomly shift.
                 if single number, offset value is picked from (-offsets, offsets).
             prob: probability of rotating.
@@ -130,7 +130,7 @@ class RandShiftIntensityd(Randomizable, MapTransform):
 
 class ScaleIntensityd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.ScaleIntensity`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.ScaleIntensity`.
     Scale the intensity of input image to the given value range (minv, maxv).
     If `minv` and `maxv` not provided, use `factor` to scale image by ``v = v * (1 + factor)``.
     """
@@ -141,7 +141,7 @@ class ScaleIntensityd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             minv: minimum value of output data.
             maxv: maximum value of output data.
             factor: factor scale by ``v = v * (1 + factor)``.
@@ -159,7 +159,7 @@ class ScaleIntensityd(MapTransform):
 
 class Whiteningd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.ScaleIntensity`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.ScaleIntensity`.
     Scale the intensity of input image to the given value range (minv, maxv).
     If `minv` and `maxv` not provided, use `factor` to scale image by ``v = v * (1 + factor)``.
     """
@@ -169,7 +169,7 @@ class Whiteningd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             minv: minimum value of output data.
             maxv: maximum value of output data.
             factor: factor scale by ``v = v * (1 + factor)``.
@@ -187,14 +187,14 @@ class Whiteningd(MapTransform):
 
 class RandScaleIntensityd(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandScaleIntensity`.
+    Dictionary-based version :py:class:`ponai.transforms.RandScaleIntensity`.
     """
 
     def __init__(self, keys: KeysCollection, factors: Union[Tuple[float, float], float], prob: float = 0.1):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             factors: factor range to randomly scale by ``v = v * (1 + factor)``.
                 if single number, factor value is picked from (-factors, factors).
             prob: probability of rotating.
@@ -224,13 +224,13 @@ class RandScaleIntensityd(Randomizable, MapTransform):
 
 class NormalizeIntensityd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.NormalizeIntensity`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.NormalizeIntensity`.
     This transform can normalize only non-zero values or entire image, and can also calculate
     mean and std on each channel separately.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: monai.transforms.MapTransform
+            See also: ponai.transforms.MapTransform
         subtrahend (ndarray): the amount to subtract by (usually the mean)
         divisor (ndarray): the amount to divide by (usually the standard deviation)
         nonzero: whether only normalize non-zero values.
@@ -258,11 +258,11 @@ class NormalizeIntensityd(MapTransform):
 
 class ThresholdIntensityd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.ThresholdIntensity`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.ThresholdIntensity`.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: monai.transforms.MapTransform
+            See also: ponai.transforms.MapTransform
         threshold: the threshold to filter intensity values.
         above: filter values above the threshold or below the threshold, default is True.
         cval: value to fill the remaining parts of the image, default is 0.
@@ -281,11 +281,11 @@ class ThresholdIntensityd(MapTransform):
 
 class ScaleIntensityRanged(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.ScaleIntensityRange`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.ScaleIntensityRange`.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: monai.transforms.MapTransform
+            See also: ponai.transforms.MapTransform
         a_min: intensity original range min.
         a_max: intensity original range max.
         b_min: intensity target range min.
@@ -308,7 +308,7 @@ class ScaleIntensityRanged(MapTransform):
 
 class AdjustContrastd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.AdjustContrast`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.AdjustContrast`.
     Changes image intensity by gamma. Each pixel/voxel intensity is updated as:
 
         `x = ((x - min) / intensity_range) ^ gamma * intensity_range + min`
@@ -330,14 +330,14 @@ class AdjustContrastd(MapTransform):
 
 class RandAdjustContrastd(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandAdjustContrast`.
+    Dictionary-based version :py:class:`ponai.transforms.RandAdjustContrast`.
     Randomly changes image intensity by gamma. Each pixel/voxel intensity is updated as:
 
         `x = ((x - min) / intensity_range) ^ gamma * intensity_range + min`
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: monai.transforms.MapTransform
+            See also: ponai.transforms.MapTransform
         prob: Probability of adjustment.
         gamma (tuple of float or float): Range of gamma values.
             If single number, value is picked from (0.5, gamma), default is (0.5, 4.5).
@@ -376,11 +376,11 @@ class RandAdjustContrastd(Randomizable, MapTransform):
 
 class ScaleIntensityRangePercentilesd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.ScaleIntensityRangePercentiles`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.ScaleIntensityRangePercentiles`.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: monai.transforms.MapTransform
+            See also: ponai.transforms.MapTransform
         lower: lower percentile.
         upper: upper percentile.
         b_min: intensity target range min.

@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,8 +13,8 @@ from typing import Callable, Optional, Sequence, Union, List
 
 import torch
 
-from monai.metrics import compute_roc_auc
-from monai.utils import exact_version, optional_import, Average
+from ponai.metrics import compute_roc_auc
+from ponai.utils import exact_version, optional_import, Average
 
 Metric, _ = optional_import("ignite.metrics", "0.3.0", exact_version, "Metric")
 

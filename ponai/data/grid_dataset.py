@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,8 +15,8 @@ from typing import Union
 import torch
 from torch.utils.data import IterableDataset
 
-from monai.data.utils import iter_patch
-from monai.utils import NumpyPadMode
+from ponai.data.utils import iter_patch
+from ponai.utils import NumpyPadMode
 
 
 class GridPatchDataset(IterableDataset):

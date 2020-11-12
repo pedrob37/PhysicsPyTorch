@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,10 +13,10 @@
 import numpy as np
 import torch.nn as nn
 
-from monai.networks.layers.factories import Norm, Act
-from monai.networks.blocks import Convolution, ResidualUnit
-from monai.networks.layers.simplelayers import Reshape
-from monai.networks.layers.convutils import same_padding, calculate_out_shape
+from ponai.networks.layers.factories import Norm, Act
+from ponai.networks.blocks import Convolution, ResidualUnit
+from ponai.networks.layers.simplelayers import Reshape
+from ponai.networks.layers.convutils import same_padding, calculate_out_shape
 
 
 class Regressor(nn.Module):

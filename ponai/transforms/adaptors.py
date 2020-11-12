@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -122,10 +122,10 @@ Outputs:
 
 """
 
-from monai.utils import export as _monai_export
+from ponai.utils import export as _ponai_export
 
 
-@_monai_export("monai.transforms")
+@_ponai_export("ponai.transforms")
 def adaptor(function, outputs, inputs=None):
     def must_be_types_or_none(variable_name, variable, types):
         if variable is not None:
@@ -210,7 +210,7 @@ def adaptor(function, outputs, inputs=None):
     return _inner
 
 
-@_monai_export("monai.transforms")
+@_ponai_export("ponai.transforms")
 def apply_alias(fn, name_map):
     def _inner(data):
 
@@ -231,7 +231,7 @@ def apply_alias(fn, name_map):
     return _inner
 
 
-@_monai_export("monai.transforms")
+@_ponai_export("ponai.transforms")
 def to_kwargs(fn):
     def _inner(data):
         return fn(**data)

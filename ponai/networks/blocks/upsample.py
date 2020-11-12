@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,8 +14,8 @@ from typing import Optional, Union
 import torch
 import torch.nn as nn
 
-from monai.networks.layers.factories import Conv
-from monai.utils import UpsampleMode
+from ponai.networks.layers.factories import Conv
+from ponai.utils import UpsampleMode
 
 
 class UpSample(nn.Module):

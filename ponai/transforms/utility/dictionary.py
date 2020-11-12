@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of dictionary-based wrappers around the "vanilla" transforms for utility functions
-defined in :py:class:`monai.transforms.utility.array`.
+defined in :py:class:`ponai.transforms.utility.array`.
 
 Class names are ended with 'd' to denote dictionary-based transforms.
 """
@@ -21,10 +21,10 @@ import copy
 import torch
 import numpy as np
 
-from monai.config import KeysCollection
-from monai.transforms.compose import MapTransform
-from monai.utils import ensure_tuple, ensure_tuple_rep
-from monai.transforms.utility.array import (
+from ponai.config import KeysCollection
+from ponai.transforms.compose import MapTransform
+from ponai.utils import ensure_tuple, ensure_tuple_rep
+from ponai.transforms.utility.array import (
     AddChannel,
     AsChannelFirst,
     ToTensor,
@@ -42,14 +42,14 @@ from monai.transforms.utility.array import (
 
 class Identityd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Identity`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Identity`.
     """
 
     def __init__(self, keys: KeysCollection):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
 
         """
         super().__init__(keys)
@@ -64,14 +64,14 @@ class Identityd(MapTransform):
 
 class AsChannelFirstd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.AsChannelFirst`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.AsChannelFirst`.
     """
 
     def __init__(self, keys: KeysCollection, channel_dim: int = -1):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             channel_dim: which dimension of input image is the channel, default is the last dimension.
         """
         super().__init__(keys)
@@ -86,14 +86,14 @@ class AsChannelFirstd(MapTransform):
 
 class AsChannelLastd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.AsChannelLast`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.AsChannelLast`.
     """
 
     def __init__(self, keys: KeysCollection, channel_dim: int = 0):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             channel_dim: which dimension of input image is the channel, default is the first dimension.
         """
         super().__init__(keys)
@@ -108,14 +108,14 @@ class AsChannelLastd(MapTransform):
 
 class AddChanneld(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.AddChannel`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.AddChannel`.
     """
 
     def __init__(self, keys: KeysCollection):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
         """
         super().__init__(keys)
         self.adder = AddChannel()
@@ -129,14 +129,14 @@ class AddChanneld(MapTransform):
 
 class RepeatChanneld(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.RepeatChannel`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.RepeatChannel`.
     """
 
     def __init__(self, keys: KeysCollection, repeats: int):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             repeats: the number of repetitions for each element.
         """
         super().__init__(keys)
@@ -151,14 +151,14 @@ class RepeatChanneld(MapTransform):
 
 class CastToTyped(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.CastToType`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.CastToType`.
     """
 
     def __init__(self, keys: KeysCollection, dtype: Union[Sequence[np.dtype], np.dtype] = np.float32):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             dtype: convert image to this data type, default is `np.float32`.
                 it also can be a sequence of np.dtype, each element corresponds to a key in ``keys``.
 
@@ -177,14 +177,14 @@ class CastToTyped(MapTransform):
 
 class ToTensord(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.ToTensor`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.ToTensor`.
     """
 
     def __init__(self, keys: KeysCollection):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
         """
         super().__init__(keys)
         self.converter = ToTensor()
@@ -198,14 +198,14 @@ class ToTensord(MapTransform):
 
 class ToNumpyd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.ToNumpy`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.ToNumpy`.
     """
 
     def __init__(self, keys: KeysCollection):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
         """
         super().__init__(keys)
         self.converter = ToNumpy()
@@ -227,7 +227,7 @@ class DeleteItemsd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
         """
         super().__init__(keys)
 
@@ -237,14 +237,14 @@ class DeleteItemsd(MapTransform):
 
 class SqueezeDimd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.SqueezeDim`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.SqueezeDim`.
     """
 
     def __init__(self, keys: KeysCollection, dim: int = 0):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             dim: dimension to be squeezed. Default: 0 (the first dimension)
         """
         super().__init__(keys)
@@ -259,7 +259,7 @@ class SqueezeDimd(MapTransform):
 
 class DataStatsd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.DataStats`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.DataStats`.
     """
 
     def __init__(
@@ -275,7 +275,7 @@ class DataStatsd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             prefix: will be printed in format: "{prefix} statistics".
                 it also can be a sequence of string, each element corresponds to a key in ``keys``.
             data_shape: whether to show the shape of input data.
@@ -317,14 +317,14 @@ class DataStatsd(MapTransform):
 
 class SimulateDelayd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:monai.transforms.utility.array.SimulateDelay.
+    Dictionary-based wrapper of :py:class:ponai.transforms.utility.array.SimulateDelay.
     """
 
     def __init__(self, keys: KeysCollection, delay_time: Union[Sequence[float], float] = 0.0):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             delay_time: The minimum amount of time, in fractions of seconds, to accomplish this identity task.
                 It also can be a sequence of string, each element corresponds to a key in ``keys``.
 
@@ -351,7 +351,7 @@ class CopyItemsd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             times: expected copy times, for example, if keys is "img", times is 3,
                 it will add 3 copies of "img" data to the dictionary.
             names: the names coresponding to the newly copied data,
@@ -392,7 +392,7 @@ class ConcatItemsd(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be concatenated together.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             name: the name coresponding to the key to store the concatenated data.
             dim: on which dimension to concatenate the items, default is 0.
 
@@ -427,7 +427,7 @@ class ConcatItemsd(MapTransform):
 
 class Lambdad(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Lambda`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Lambda`.
 
     For example:
 
@@ -441,7 +441,7 @@ class Lambdad(MapTransform):
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: :py:class:`monai.transforms.compose.MapTransform`
+            See also: :py:class:`ponai.transforms.compose.MapTransform`
         func: Lambda/function to be applied. It also can be a sequence of Callable,
             each element corresponds to a key in ``keys``.
     """

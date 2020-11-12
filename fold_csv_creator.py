@@ -20,8 +20,14 @@ def sort_dir(dir_name, sub_split=2, param_split=4):
 
 
 # Given directory of volumes want to create a csv with 5 folds (training/ valdiation/ inference)
-image_directory = '/data/Resampled_Data/Images/SS_GM_Images'
-images, subject_ids, subject_physics = sort_dir(image_directory)
+OOD = True
+if OOD:
+    image_directory = '/data/Resampled_Data/Images/OOD_limited'
+    images, subject_ids, subject_physics = sort_dir(image_directory, sub_split=3, param_split=5)
+else:
+    image_directory = '/data/Resampled_Data/Images/SS_GM_Images'
+    images, subject_ids, subject_physics = sort_dir(image_directory, sub_split=2, param_split=4)
+
 shuffle_test = False
 
 basic_csv = pd.DataFrame({
@@ -30,17 +36,28 @@ basic_csv = pd.DataFrame({
     'subject_physics': subject_physics
 })
 
-# Fold creation:
-basic_csv.fold = 0
-num_subjects = basic_csv.subject_id.nunique()
-num_folds = 6
-splits = [5, 10, 15, 19, 23, 27][::-1]
-for fold_num, split in enumerate(splits):
-    basic_csv.loc[basic_csv.subject_id < split, 'fold'] = fold_num
-basic_csv = basic_csv.astype({'fold': 'int32'})
 
-# Saving "base" csv
-basic_csv.to_csv('/home/pedro/PhysicsPyTorch/local_physics_csv.csv', index=False)
+# Fold creation:
+def create_csv(dataframe, name='local_physics_csv.csv', folds=True):
+    if folds:
+        dataframe.fold = 0
+        num_subjects = dataframe.subject_id.nunique()
+        num_folds = 6
+        splits = [5, 10, 15, 19, 23, 27][::-1]
+        for fold_num, split in enumerate(splits):
+            dataframe.loc[dataframe.subject_id < split, 'fold'] = fold_num
+        dataframe = dataframe.astype({'fold': 'int32'})
+    
+    # Saving "base" csv
+    dataframe.to_csv(os.path.join('/home/pedro/PhysicsPyTorch/', name), index=False)
+
+
+# Default: create_csv(basic_csv)
+# OOD
+if OOD:
+    create_csv(basic_csv, name='OOD_physics_csv_folds_limited.csv', folds=True)
+else:
+    create_csv(basic_csv, folds=True)
 
 # from sklearn.model_selection import KFold
 # kf = KFold(n_splits=num_folds)
@@ -105,4 +122,3 @@ def reshuffle_csv(og_csv, batch_size):
 if shuffle_test:
     # Testing the shuffle function
     tester, tester2 = reshuffle_csv(basic_csv, bs)
-

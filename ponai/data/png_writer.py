@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,8 +13,8 @@ from typing import Union
 
 import numpy as np
 
-from monai.transforms import Resize
-from monai.utils import ensure_tuple_rep, min_version, optional_import, InterpolateMode
+from ponai.transforms import Resize
+from ponai.utils import ensure_tuple_rep, min_version, optional_import, InterpolateMode
 
 Image, _ = optional_import("PIL", name="Image")
 

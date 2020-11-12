@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,7 +15,7 @@ from urllib.error import URLError
 import hashlib
 import tarfile
 import zipfile
-from monai.utils import progress_bar, optional_import
+from ponai.utils import progress_bar, optional_import
 
 gdown, has_gdown = optional_import("gdown", "3.6")
 

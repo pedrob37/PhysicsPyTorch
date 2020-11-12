@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,8 +13,8 @@ from typing import Callable, Union
 
 import torch
 import torch.nn.functional as F
-from monai.data.utils import compute_importance_map, dense_patch_slices, get_valid_patch_size
-from monai.utils import BlendMode, PytorchPadMode, fall_back_tuple
+from ponai.data.utils import compute_importance_map, dense_patch_slices, get_valid_patch_size
+from ponai.utils import BlendMode, PytorchPadMode, fall_back_tuple
 
 
 def sliding_window_inference(
@@ -26,6 +26,7 @@ def sliding_window_inference(
     mode: Union[BlendMode, str] = BlendMode.CONSTANT,
     padding_mode: Union[PytorchPadMode, str] = PytorchPadMode.CONSTANT,
     cval=0,
+    uncertainty_flag=False
 ):
     """
     Sliding window inference on `inputs` with `predictor`.
@@ -63,15 +64,15 @@ def sliding_window_inference(
         - input must be channel-first and have a batch dim, support both spatial 2D and 3D.
         - currently only supports `inputs` with batch_size=1.
     """
-    num_spatial_dims = len(inputs.shape) - 2
     assert 0 <= overlap < 1, "overlap must be >= 0 and < 1."
 
     # determine image spatial size and batch size
     # Note: all input images must have the same image size and batch size
-    if type(inputs) == tuple:
+    inputs_type = type(inputs)
+    if inputs_type == tuple:
         phys_inputs = inputs[1]
         inputs = inputs[0]
-
+    num_spatial_dims = len(inputs.shape) - 2
     image_size_ = list(inputs.shape[2:])
     batch_size = inputs.shape[0]
 
@@ -93,6 +94,7 @@ def sliding_window_inference(
 
     # Store all slices in list
     slices = dense_patch_slices(image_size, roi_size, scan_interval)
+    # print(f'The slices are {slices}')
 
     slice_batches = []
     for slice_index in range(0, len(slices), sw_batch_size):
@@ -107,52 +109,248 @@ def sliding_window_inference(
         slice_batches.append(torch.stack(input_slices))
 
     # Perform predictions
-    output_rois = list()
-    for data in slice_batches:
-        seg_prob = predictor(data, phys_inputs)  # batched patch segmentation
-        output_rois.append(seg_prob)
+    if not uncertainty_flag:
+        # No uncertainty, so only one prediction, so proceed normally
+        output_rois = list()
+        for data in slice_batches:
+            if not uncertainty_flag and inputs_type == tuple:
+                seg_prob, _ = predictor(data, phys_inputs)  # batched patch segmentation
+                output_rois.append(seg_prob)
+            elif inputs_type != tuple:
+                seg_prob, _ = predictor(data)  # batched patch segmentation
+                output_rois.append(seg_prob)
 
-    # stitching output image
-    output_classes = output_rois[0].shape[1]
-    output_shape = [batch_size, output_classes] + list(image_size)
+        # stitching output image
+        output_classes = output_rois[0].shape[1]
+        output_shape = [batch_size, output_classes] + list(image_size)
 
-    # Create importance map
-    importance_map = compute_importance_map(get_valid_patch_size(image_size, roi_size), mode=mode, device=inputs.device)
+        # Create importance map
+        importance_map = compute_importance_map(get_valid_patch_size(image_size, roi_size), mode=mode, device=inputs.device)
 
-    # allocate memory to store the full output and the count for overlapping parts
-    output_image = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
-    count_map = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
+        # allocate memory to store the full output and the count for overlapping parts
+        output_image = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
+        count_map = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
 
-    for window_id, slice_index in enumerate(range(0, len(slices), sw_batch_size)):
-        slice_index_range = range(slice_index, min(slice_index + sw_batch_size, len(slices)))
+        for window_id, slice_index in enumerate(range(0, len(slices), sw_batch_size)):
+            slice_index_range = range(slice_index, min(slice_index + sw_batch_size, len(slices)))
 
-        # store the result in the proper location of the full output. Apply weights from importance map.
-        for curr_index in slice_index_range:
-            curr_slice = slices[curr_index]
-            if len(curr_slice) == 3:
-                output_image[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += (
-                    importance_map * output_rois[window_id][curr_index - slice_index, :]
-                )
-                count_map[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += importance_map
-            else:
-                output_image[0, :, curr_slice[0], curr_slice[1]] += (
-                    importance_map * output_rois[window_id][curr_index - slice_index, :]
-                )
-                count_map[0, :, curr_slice[0], curr_slice[1]] += importance_map
+            # store the result in the proper location of the full output. Apply weights from importance map.
+            for curr_index in slice_index_range:
+                curr_slice = slices[curr_index]
+                if len(curr_slice) == 3:
+                    # print(output_image.shape, curr_slice, importance_map.shape, output_rois[window_id].shape)
+                    output_image[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += (
+                        importance_map * output_rois[window_id][curr_index - slice_index, :]
+                    )
+                    count_map[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += importance_map
+                else:
+                    output_image[0, :, curr_slice[0], curr_slice[1]] += (
+                        importance_map * output_rois[window_id][curr_index - slice_index, :]
+                    )
+                    count_map[0, :, curr_slice[0], curr_slice[1]] += importance_map
 
-    # account for any overlapping sections
-    output_image /= count_map
+        # account for any overlapping sections
+        output_image /= count_map
 
-    if num_spatial_dims == 3:
+        if num_spatial_dims == 3:
+            return output_image[
+                ...,
+                pad_size[4]: image_size_[0] + pad_size[4],
+                pad_size[2]: image_size_[1] + pad_size[2],
+                pad_size[0]: image_size_[2] + pad_size[0],
+            ]
         return output_image[
-            ...,
-            pad_size[4] : image_size_[0] + pad_size[4],
-            pad_size[2] : image_size_[1] + pad_size[2],
-            pad_size[0] : image_size_[2] + pad_size[0],
-        ]
-    return output_image[
-        ..., pad_size[2] : image_size_[0] + pad_size[2], pad_size[0] : image_size_[1] + pad_size[0]
-    ]  # 2D
+            ..., pad_size[2]: image_size_[0] + pad_size[2], pad_size[0]: image_size_[1] + pad_size[0]
+        ]  # 2D
+    else:
+        # Decide on number of histogram samples
+        num_hist_samples = 20
+        overall_stochastic_logits_hist = torch.empty((1, 2, 181, 217, 181, num_hist_samples))
+        overall_true_seg_net_out_hist = torch.empty((1, 2, 181, 217, 181, num_hist_samples))
+
+        output_rois = list()
+        unc_output_rois = list()
+        # Have uncertainty, therefore have MANY outputs, but only have ONE pass through network
+        for data in slice_batches:
+            if inputs_type == tuple:
+                seg_prob, unc_prob, _ = predictor(data, phys_inputs)  # batched patch segmentation
+                output_rois.append(seg_prob)
+                unc_output_rois.append(unc_prob)
+            elif inputs_type != tuple:
+                seg_prob, unc_prob, _ = predictor(data)  # batched patch segmentation
+                output_rois.append(seg_prob)
+                unc_output_rois.append(unc_prob)
+        # Get shape of logits
+        logits_shape = list(seg_prob.shape)
+        # Now want an array of randomly normally distributed samples size of logits x num samples
+        # logits_shape.append(num_hist_samples)
+        inf_ax = torch.distributions.Normal(torch.tensor(0.0).to(device=torch.device("cuda:0")),
+                                            torch.tensor(1.0).to(device=torch.device("cuda:0")))
+        # inf_noise_array = torch.empty(logits_shape).normal_(mean=0, std=1)
+        # Loop through samples
+
+        for infpass in range(num_hist_samples):
+            true_output_rois = list()
+            true_unc_output_rois = list()
+            # print(f'The lengths of rois are {len(output_rois)}, {len(unc_output_rois)}')
+            for roi, unc_roi in zip(output_rois, unc_output_rois):
+                # output_rois = list()
+                # unc_output_rois = list()m
+                # Repeat steps above to get more samples
+                # noise_sample = inf_noise_array[..., infpass]
+                stochastic_logits = roi + unc_roi * inf_ax.sample(logits_shape)  # noise_sample
+                # print(f'The sigma mean is {torch.mean(unc_roi)}, logits mean is {torch.mean(roi)}')
+                # print(
+                #     f'The logits, sigma, ax sizes are: {roi.shape}, {unc_roi.shape}, {inf_ax.sample(logits_shape).shape}')
+                # print(
+                #     f'A little ax check: {inf_ax.sample(logits_shape)[0, 0, 0, 0, 0]}, {inf_ax.sample(logits_shape)[0, 1, 0, 0, 0]}')
+                true_seg_net_out = torch.softmax(stochastic_logits, dim=1)
+                # print(f'The stochastic logits shapes are {stochastic_logits.shape}, {true_seg_net_out.shape}')
+                true_output_rois.append(true_seg_net_out)
+                true_unc_output_rois.append(stochastic_logits)
+
+            # stitching output image
+            # print(f'The true output rois tensor shapes are {true_output_rois[0].shape}')
+            output_classes = true_output_rois[0].shape[1]
+            output_shape = [batch_size, output_classes] + list(image_size)
+
+            # Create importance map
+            importance_map = compute_importance_map(get_valid_patch_size(image_size, roi_size), mode=mode,
+                                                    device=inputs.device)
+
+            # allocate memory to store the full output and the count for overlapping parts
+            output_image = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
+            count_map = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
+
+            # slic_index, zero to len(slices) in increments of sw_batch_size
+            for window_id, slice_index in enumerate(range(0, len(slices), sw_batch_size)):
+                slice_index_range = range(slice_index, min(slice_index + sw_batch_size, len(slices)))
+
+                # store the result in the proper location of the full output. Apply weights from importance map.
+                for curr_index in slice_index_range:
+                    curr_slice = slices[curr_index]
+                    if len(curr_slice) == 3:
+                        # print(output_image.shape, curr_slice, importance_map.shape, true_output_rois[window_id].shape)
+                        output_image[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += (
+                                importance_map * true_output_rois[window_id][curr_index - slice_index, :]
+                        )
+                        count_map[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += importance_map
+                    else:
+                        output_image[0, :, curr_slice[0], curr_slice[1]] += (
+                                importance_map * true_output_rois[window_id][curr_index - slice_index, :]
+                        )
+                        count_map[0, :, curr_slice[0], curr_slice[1]] += importance_map
+
+            # account for any overlapping sections
+            output_image /= count_map
+
+            if num_spatial_dims == 3:
+                output_image = output_image[
+                       ...,
+                       pad_size[4]: image_size_[0] + pad_size[4],
+                       pad_size[2]: image_size_[1] + pad_size[2],
+                       pad_size[0]: image_size_[2] + pad_size[0],
+                       ]
+                overall_true_seg_net_out_hist[..., infpass] = output_image
+            else:
+                output_image = output_image[
+                       ..., pad_size[2]: image_size_[0] + pad_size[2], pad_size[0]: image_size_[1] + pad_size[0]
+                       ]  # 2D
+                overall_true_seg_net_out_hist[..., infpass] = output_image
+
+            # Uncertainty part
+            # stitching output image
+            output_classes = true_unc_output_rois[0].shape[1]
+            output_shape = [batch_size, output_classes] + list(image_size)
+
+            # Create importance map
+            importance_map = compute_importance_map(get_valid_patch_size(image_size, roi_size), mode=mode,
+                                                    device=inputs.device)
+
+            # allocate memory to store the full output and the count for overlapping parts
+            unc_output = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
+            count_map = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
+
+            for window_id, slice_index in enumerate(range(0, len(slices), sw_batch_size)):
+                slice_index_range = range(slice_index, min(slice_index + sw_batch_size, len(slices)))
+
+                # store the result in the proper location of the full output. Apply weights from importance map.
+                for curr_index in slice_index_range:
+                    curr_slice = slices[curr_index]
+                    if len(curr_slice) == 3:
+                        unc_output[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += (
+                                importance_map * true_unc_output_rois[window_id][curr_index - slice_index, :]
+                        )
+                        count_map[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += importance_map
+                    else:
+                        unc_output[0, :, curr_slice[0], curr_slice[1]] += (
+                                importance_map * true_unc_output_rois[window_id][curr_index - slice_index, :]
+                        )
+                        count_map[0, :, curr_slice[0], curr_slice[1]] += importance_map
+
+            # account for any overlapping sections
+            unc_output /= count_map
+
+            if num_spatial_dims == 3:
+                unc_output = unc_output[
+                               ...,
+                               pad_size[4]: image_size_[0] + pad_size[4],
+                               pad_size[2]: image_size_[1] + pad_size[2],
+                               pad_size[0]: image_size_[2] + pad_size[0],
+                               ]
+                overall_stochastic_logits_hist[..., infpass] = unc_output
+            else:
+                unc_output = unc_output[
+                               ..., pad_size[2]: image_size_[0] + pad_size[2],
+                               pad_size[0]: image_size_[1] + pad_size[0]
+                               ]  # 2D
+                overall_stochastic_logits_hist[..., infpass] = unc_output
+
+        # Sigma part
+        # stitching output image
+        output_classes = unc_output_rois[0].shape[1]
+        output_shape = [batch_size, output_classes] + list(image_size)
+
+        # Create importance map
+        importance_map = compute_importance_map(get_valid_patch_size(image_size, roi_size), mode=mode,
+                                                device=inputs.device)
+
+        # allocate memory to store the full output and the count for overlapping parts
+        sigma_output = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
+        count_map = torch.zeros(output_shape, dtype=torch.float32, device=inputs.device)
+        for window_id, slice_index in enumerate(range(0, len(slices), sw_batch_size)):
+            slice_index_range = range(slice_index, min(slice_index + sw_batch_size, len(slices)))
+
+            # store the result in the proper location of the full output. Apply weights from importance map.
+            for curr_index in slice_index_range:
+                curr_slice = slices[curr_index]
+                if len(curr_slice) == 3:
+                    sigma_output[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += (
+                            importance_map * unc_output_rois[window_id][curr_index - slice_index, :]
+                    )
+                    count_map[0, :, curr_slice[0], curr_slice[1], curr_slice[2]] += importance_map
+                else:
+                    sigma_output[0, :, curr_slice[0], curr_slice[1]] += (
+                            importance_map * unc_output_rois[window_id][curr_index - slice_index, :]
+                    )
+                    count_map[0, :, curr_slice[0], curr_slice[1]] += importance_map
+
+        # account for any overlapping sections
+        sigma_output /= count_map
+
+        if num_spatial_dims == 3:
+            sigma_output = sigma_output[
+                           ...,
+                           pad_size[4]: image_size_[0] + pad_size[4],
+                           pad_size[2]: image_size_[1] + pad_size[2],
+                           pad_size[0]: image_size_[2] + pad_size[0],
+                           ]
+        else:
+            sigma_output = sigma_output[
+                           ..., pad_size[2]: image_size_[0] + pad_size[2],
+                           pad_size[0]: image_size_[1] + pad_size[0]
+                           ]  # 2D
+        return overall_true_seg_net_out_hist, overall_stochastic_logits_hist, sigma_output
 
 
 def _get_scan_interval(image_size, roi_size, num_spatial_dims: int, overlap: float):

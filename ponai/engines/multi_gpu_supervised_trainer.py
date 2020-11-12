@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,8 +12,8 @@
 from typing import Callable
 import torch
 
-from monai.utils import exact_version, optional_import
-from monai.engines.utils import get_devices_spec
+from ponai.utils import exact_version, optional_import
+from ponai.engines.utils import get_devices_spec
 
 create_supervised_trainer, _ = optional_import("ignite.engine", "0.3.0", exact_version, "create_supervised_trainer")
 create_supervised_evaluator, _ = optional_import("ignite.engine", "0.3.0", exact_version, "create_supervised_evaluator")

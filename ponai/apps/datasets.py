@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,9 +14,9 @@ import sys
 import tarfile
 import numpy as np
 from typing import Any, Callable
-from monai.data import CacheDataset, load_decathalon_datalist
-from monai.transforms import Randomizable, LoadNiftid, LoadPNGd, AddChanneld, Compose
-from monai.apps.utils import download_and_extract
+from ponai.data import CacheDataset, load_decathalon_datalist
+from ponai.transforms import Randomizable, LoadNiftid, LoadPNGd, AddChanneld, Compose
+from ponai.apps.utils import download_and_extract
 
 
 class MedNISTDataset(Randomizable, CacheDataset):
@@ -129,7 +129,7 @@ class DecathlonDataset(Randomizable, CacheDataset):
     """
     The Dataset to automatically download the data of Medical Segmentation Decathlon challenge
     (http://medicaldecathlon.com/) and generate items for training, validation or test.
-    It's based on :py:class:`monai.data.CacheDataset` to accelerate the training process.
+    It's based on :py:class:`ponai.data.CacheDataset` to accelerate the training process.
 
     Args:
         root_dir: user's local directory for caching and loading the MSD datasets.

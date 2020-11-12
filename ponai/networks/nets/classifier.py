@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,8 +11,8 @@
 
 
 import torch.nn as nn
-from monai.networks.layers.factories import Norm, Act, split_args
-from monai.networks.nets.regressor import Regressor
+from ponai.networks.layers.factories import Norm, Act, split_args
+from ponai.networks.nets.regressor import Regressor
 
 
 class Classifier(Regressor):

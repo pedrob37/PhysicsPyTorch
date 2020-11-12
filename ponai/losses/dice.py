@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,8 +15,8 @@ from typing import Callable, Union
 import torch
 from torch.nn.modules.loss import _Loss
 
-from monai.networks import one_hot
-from monai.utils import LossReduction, Weight
+from ponai.networks import one_hot
+from ponai.utils import LossReduction, Weight
 
 
 class DiceLoss(_Loss):

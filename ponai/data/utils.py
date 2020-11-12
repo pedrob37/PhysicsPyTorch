@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,8 +18,8 @@ from itertools import starmap, product
 import torch
 from torch.utils.data._utils.collate import default_collate
 import numpy as np
-from monai.utils import ensure_tuple_size, ensure_tuple_rep, optional_import, NumpyPadMode, BlendMode
-from monai.networks.layers.simplelayers import GaussianFilter
+from ponai.utils import ensure_tuple_size, ensure_tuple_rep, optional_import, NumpyPadMode, BlendMode
+from ponai.networks.layers.simplelayers import GaussianFilter
 
 nib, _ = optional_import("nibabel")
 

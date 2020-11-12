@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,8 +14,8 @@ from typing import Union
 
 import torch
 
-from monai.inferers.utils import sliding_window_inference
-from monai.utils import BlendMode
+from ponai.inferers.utils import sliding_window_inference
+from ponai.utils import BlendMode
 
 
 class Inferer(ABC):

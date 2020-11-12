@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -66,7 +66,7 @@ class UpsampleMode(Enum):
 
 class BlendMode(Enum):
     """
-    See also: :py:class:`monai.data.utils.compute_importance_map`
+    See also: :py:class:`ponai.data.utils.compute_importance_map`
     """
 
     CONSTANT = "constant"
@@ -96,7 +96,7 @@ class GridSamplePadMode(Enum):
 
 class Average(Enum):
     """
-    See also: :py:class:`monai.metrics.rocauc.compute_roc_auc`
+    See also: :py:class:`ponai.metrics.rocauc.compute_roc_auc`
     """
 
     MACRO = "macro"
@@ -107,7 +107,7 @@ class Average(Enum):
 
 class MetricReduction(Enum):
     """
-    See also: :py:class:`monai.metrics.meandice.DiceMetric`
+    See also: :py:class:`ponai.metrics.meandice.DiceMetric`
     """
 
     NONE = "none"
@@ -122,10 +122,10 @@ class MetricReduction(Enum):
 class LossReduction(Enum):
     """
     See also:
-        - :py:class:`monai.losses.dice.DiceLoss`
-        - :py:class:`monai.losses.dice.GeneralizedDiceLoss`
-        - :py:class:`monai.losses.focal_loss.FocalLoss`
-        - :py:class:`monai.losses.tversky.TverskyLoss`
+        - :py:class:`ponai.losses.dice.DiceLoss`
+        - :py:class:`ponai.losses.dice.GeneralizedDiceLoss`
+        - :py:class:`ponai.losses.focal_loss.FocalLoss`
+        - :py:class:`ponai.losses.tversky.TverskyLoss`
     """
 
     NONE = "none"
@@ -135,7 +135,7 @@ class LossReduction(Enum):
 
 class Weight(Enum):
     """
-    See also: :py:class:`monai.losses.dice.GeneralizedDiceLoss`
+    See also: :py:class:`ponai.losses.dice.GeneralizedDiceLoss`
     """
 
     SQUARE = "square"
@@ -146,9 +146,9 @@ class Weight(Enum):
 class Normalisation(Enum):
     """
     See also:
-        - :py:class:`monai.networks.nets.ConvNormActi`
-        - :py:class:`monai.networks.nets.HighResBlock`
-        - :py:class:`monai.networks.nets.HighResNet`
+        - :py:class:`ponai.networks.nets.ConvNormActi`
+        - :py:class:`ponai.networks.nets.HighResBlock`
+        - :py:class:`ponai.networks.nets.HighResNet`
     """
 
     BATCH = "batch"
@@ -158,9 +158,9 @@ class Normalisation(Enum):
 class Activation(Enum):
     """
     See also:
-        - :py:class:`monai.networks.nets.ConvNormActi`
-        - :py:class:`monai.networks.nets.HighResBlock`
-        - :py:class:`monai.networks.nets.HighResNet`
+        - :py:class:`ponai.networks.nets.ConvNormActi`
+        - :py:class:`ponai.networks.nets.HighResBlock`
+        - :py:class:`ponai.networks.nets.HighResNet`
     """
 
     RELU = "relu"
@@ -170,7 +170,7 @@ class Activation(Enum):
 
 class ChannelMatching(Enum):
     """
-    See also: :py:class:`monai.networks.nets.HighResBlock`
+    See also: :py:class:`ponai.networks.nets.HighResBlock`
     """
 
     PAD = "pad"
@@ -179,7 +179,7 @@ class ChannelMatching(Enum):
 
 class Method(Enum):
     """
-    See also: :py:class:`monai.transforms.croppad.array.SpatialPad`
+    See also: :py:class:`ponai.transforms.croppad.array.SpatialPad`
     """
 
     SYMMETRIC = "symmetric"

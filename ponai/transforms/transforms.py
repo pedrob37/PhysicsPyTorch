@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of "vanilla" transforms
-https://github.com/Project-MONAI/MONAI/wiki/MONAI_Design
+https://github.com/Project-ponai/ponai/wiki/ponai_Design
 """
 
 import warnings
@@ -22,13 +22,13 @@ import torch
 from torch.utils.data._utils.collate import np_str_obj_array_pattern
 from skimage.transform import resize
 
-from monai.data.utils import (get_random_patch, get_valid_patch_size, correct_nifti_header_if_necessary, zoom_affine,
+from ponai.data.utils import (get_random_patch, get_valid_patch_size, correct_nifti_header_if_necessary, zoom_affine,
                               compute_shape_offset, to_affine_nd)
-from monai.networks.layers.simplelayers import GaussianFilter
-from monai.transforms.compose import Randomizable
-from monai.transforms.utils import (create_control_grid, create_grid, create_rotate, create_scale, create_shear,
+from ponai.networks.layers.simplelayers import GaussianFilter
+from ponai.transforms.compose import Randomizable
+from ponai.transforms.utils import (create_control_grid, create_grid, create_rotate, create_scale, create_shear,
                                     create_translate, rescale_array)
-from monai.utils.misc import ensure_tuple
+from ponai.utils.misc import ensure_tuple
 
 
 class Spacing:
@@ -278,7 +278,7 @@ class AsChannelFirst:
     """
     Change the channel dimension of the image to the first dimension.
 
-    Most of the image transformations in ``monai.transforms``
+    Most of the image transformations in ``ponai.transforms``
     assumes the input image is in the channel-first format, which has the shape
     (num_channels, spatial_dim_1[, spatial_dim_2, ...]).
 
@@ -303,7 +303,7 @@ class AddChannel:
     """
     Adds a 1-length channel dimension to the input image.
 
-    Most of the image transformations in ``monai.transforms``
+    Most of the image transformations in ``ponai.transforms``
     assumes the input image is in the channel-first format, which has the shape
     (num_channels, spatial_dim_1[, spatial_dim_2, ...]).
 
@@ -995,10 +995,10 @@ class RandAffineGrid(Randomizable):
                 N-th parameter.
 
         See also:
-            - :py:meth:`monai.transforms.utils.create_rotate`
-            - :py:meth:`monai.transforms.utils.create_shear`
-            - :py:meth:`monai.transforms.utils.create_translate`
-            - :py:meth:`monai.transforms.utils.create_scale`
+            - :py:meth:`ponai.transforms.utils.create_rotate`
+            - :py:meth:`ponai.transforms.utils.create_shear`
+            - :py:meth:`ponai.transforms.utils.create_translate`
+            - :py:meth:`ponai.transforms.utils.create_scale`
         """
         self.rotate_range = ensure_tuple(rotate_range)
         self.shear_range = ensure_tuple(shear_range)

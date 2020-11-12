@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of dictionary-based wrappers around the "vanilla" transforms for spatial operations
-defined in :py:class:`monai.transforms.spatial.array`.
+defined in :py:class:`ponai.transforms.spatial.array`.
 
 Class names are ended with 'd' to denote dictionary-based transforms.
 """
@@ -20,11 +20,11 @@ from typing import Optional, Sequence, Union, Tuple, Iterable
 import numpy as np
 import torch
 
-from monai.config import KeysCollection
-from monai.networks.layers.simplelayers import GaussianFilter
-from monai.transforms.compose import MapTransform, Randomizable
-from monai.transforms.croppad.array import CenterSpatialCrop
-from monai.transforms.spatial.array import (
+from ponai.config import KeysCollection
+from ponai.networks.layers.simplelayers import GaussianFilter
+from ponai.transforms.compose import MapTransform, Randomizable
+from ponai.transforms.croppad.array import CenterSpatialCrop
+from ponai.transforms.spatial.array import (
     Flip,
     Orientation,
     Rand2DElastic,
@@ -37,8 +37,8 @@ from monai.transforms.spatial.array import (
     Zoom,
     _torch_interp,
 )
-from monai.transforms.utils import create_grid
-from monai.utils import (
+from ponai.transforms.utils import create_grid
+from ponai.utils import (
     GridSampleMode,
     GridSamplePadMode,
     InterpolateMode,
@@ -54,7 +54,7 @@ InterpolateModeSequence = Union[Sequence[Union[InterpolateMode, str]], Interpola
 
 class Spacingd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Spacing`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Spacing`.
 
     This transform assumes the ``data`` dictionary has a key for the input
     data's metadata and contains `affine` field.  The key is formed by ``key_{meta_key_postfix}``.
@@ -63,7 +63,7 @@ class Spacingd(MapTransform):
     to the `affine` field of metadata which is formed by ``key_{meta_key_postfix}``.
 
     see also:
-        :py:class:`monai.transforms.Spacing`
+        :py:class:`ponai.transforms.Spacing`
     """
 
     def __init__(
@@ -140,7 +140,7 @@ class Spacingd(MapTransform):
 
 class Orientationd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Orientation`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Orientation`.
 
     This transform assumes the ``data`` dictionary has a key for the input
     data's metadata and contains `affine` field.  The key is formed by ``key_{meta_key_postfix}``.
@@ -196,7 +196,7 @@ class Orientationd(MapTransform):
 
 class Rotate90d(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Rotate90`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Rotate90`.
     """
 
     def __init__(self, keys: KeysCollection, k: int = 1, spatial_axes: Tuple[int, int] = (0, 1)):
@@ -218,7 +218,7 @@ class Rotate90d(MapTransform):
 
 class RandRotate90d(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandRotate90`.
+    Dictionary-based version :py:class:`ponai.transforms.RandRotate90`.
     With probability `prob`, input arrays are rotated by 90 degrees
     in the plane specified by `spatial_axes`.
     """
@@ -229,7 +229,7 @@ class RandRotate90d(Randomizable, MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             prob: probability of rotating.
                 (Default 0.1, with 10% probability it returns a rotated array.)
             max_k: number of rotations will be sampled from `np.random.randint(max_k) + 1`.
@@ -264,11 +264,11 @@ class RandRotate90d(Randomizable, MapTransform):
 
 class Resized(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Resize`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Resize`.
 
     Args:
         keys: keys of the corresponding items to be transformed.
-            See also: :py:class:`monai.transforms.compose.MapTransform`
+            See also: :py:class:`ponai.transforms.compose.MapTransform`
         spatial_size: expected shape of spatial dimensions after resize operation.
             if the components of the `spatial_size` are non-positive values, the transform will use the
             corresponding components of img size. For example, `spatial_size=(32, -1)` will be adapted
@@ -304,7 +304,7 @@ class Resized(MapTransform):
 
 class RandAffined(Randomizable, MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.RandAffine`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.RandAffine`.
     """
 
     def __init__(
@@ -360,7 +360,7 @@ class RandAffined(Randomizable, MapTransform):
             device: device on which the tensor will be allocated.
 
         See also:
-            - :py:class:`monai.transforms.compose.MapTransform`
+            - :py:class:`ponai.transforms.compose.MapTransform`
             - :py:class:`RandAffineGrid` for the random affine parameters configurations.
         """
         super().__init__(keys)
@@ -402,7 +402,7 @@ class RandAffined(Randomizable, MapTransform):
 
 class Rand2DElasticd(Randomizable, MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Rand2DElastic`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Rand2DElastic`.
     """
 
     def __init__(
@@ -515,7 +515,7 @@ class Rand2DElasticd(Randomizable, MapTransform):
 
 class Rand3DElasticd(Randomizable, MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Rand3DElastic`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Rand3DElastic`.
     """
 
     def __init__(
@@ -626,7 +626,7 @@ class Rand3DElasticd(Randomizable, MapTransform):
 
 class Flipd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Flip`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Flip`.
 
     See `numpy.flip` for additional details.
     https://docs.scipy.org/doc/numpy/reference/generated/numpy.flip.html
@@ -649,7 +649,7 @@ class Flipd(MapTransform):
 
 class RandFlipd(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandFlip`.
+    Dictionary-based version :py:class:`ponai.transforms.RandFlip`.
 
     See `numpy.flip` for additional details.
     https://docs.scipy.org/doc/numpy/reference/generated/numpy.flip.html
@@ -685,7 +685,7 @@ class RandFlipd(Randomizable, MapTransform):
 
 class Rotated(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Rotate`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Rotate`.
 
     Args:
         keys: Keys to pick data for transformation.
@@ -733,7 +733,7 @@ class Rotated(MapTransform):
 
 class RandRotated(Randomizable, MapTransform):
     """
-    Dictionary-based version :py:class:`monai.transforms.RandRotate`
+    Dictionary-based version :py:class:`ponai.transforms.RandRotate`
     Randomly rotates the input arrays.
 
     Args:
@@ -818,7 +818,7 @@ class RandRotated(Randomizable, MapTransform):
 
 class Zoomd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.Zoom`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.Zoom`.
 
     Args:
         keys: Keys to pick data for transformation.
@@ -858,7 +858,7 @@ class Zoomd(MapTransform):
 
 class RandZoomd(Randomizable, MapTransform):
     """
-    Dict-based version :py:class:`monai.transforms.RandZoom`.
+    Dict-based version :py:class:`ponai.transforms.RandZoom`.
 
     Args:
         keys: Keys to pick data for transformation.

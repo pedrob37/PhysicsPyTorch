@@ -5,11 +5,12 @@ import torch.optim as optim
 
 
 class nnUNet(nn.Module):
-    def physics_block(self, in_channels, out_channels):
+    def physics_block(self, in_channels, out_channels, block_dropout=0.0):
         fcl = torch.nn.Sequential(torch.nn.Linear(in_channels, out_channels),
                                   torch.nn.SELU(),
                                   torch.nn.Linear(out_channels, out_channels),
                                   torch.nn.SELU(),
+                                  torch.nn.Dropout(block_dropout).train(True),
                                   )
         return fcl
 
@@ -25,7 +26,7 @@ class nnUNet(nn.Module):
         # print(physics_concat.shape)
         return physics_concat
 
-    def contracting_block(self, in_channels, out_channels, kernel_size=3):
+    def contracting_block(self, in_channels, out_channels, kernel_size=3, block_dropout=0.0):
         """
         This function creates one contracting block
         """
@@ -34,10 +35,11 @@ class nnUNet(nn.Module):
                     torch.nn.LeakyReLU(),
                     torch.nn.Conv3d(kernel_size=kernel_size, in_channels=out_channels, out_channels=out_channels, padding=1),
                     torch.nn.LeakyReLU(),
+                    torch.nn.Dropout(block_dropout).train(True),
                 )
         return block
 
-    def expansive_block(self, in_channels, mid_channel, final_channel, kernel_size=3):
+    def expansive_block(self, in_channels, mid_channel, final_channel, kernel_size=3, block_dropout=0.0):
         """
         This function creates one expansive block
         """
@@ -47,13 +49,14 @@ class nnUNet(nn.Module):
                 # torch.nn.BatchNorm3d(mid_channel),
                 torch.nn.Conv3d(kernel_size=kernel_size, in_channels=mid_channel, out_channels=final_channel, padding=1),
                 torch.nn.LeakyReLU(),
+                torch.nn.Dropout(block_dropout).train(True),
                 # torch.nn.BatchNorm3d(mid_channel),
                 torch.nn.Upsample(scale_factor=2, mode='trilinear', align_corners=True))
                 # torch.nn.ConvTranspose3d(in_channels=mid_channel, out_channels=out_channels, kernel_size=3, stride=2, padding=1, output_padding=1)
                 # )
         return block
 
-    def penultimate_block(self, in_channels, mid_channel, kernel_size=3):
+    def penultimate_block(self, in_channels, mid_channel, kernel_size=3, block_dropout=0.0):
         """
         This returns final block
         """
@@ -63,36 +66,57 @@ class nnUNet(nn.Module):
                 # torch.nn.BatchNorm3d(mid_channel),
                 torch.nn.Conv3d(kernel_size=kernel_size, in_channels=mid_channel, out_channels=mid_channel, padding=1),
                 torch.nn.LeakyReLU(),
+                torch.nn.Dropout(block_dropout).train(True),
                 )
         return block
 
-    def final_block(self, mid_channel, out_channels, kernel_size=3):
+    def final_block(self, mid_channel, out_channels, kernel_size=3, unc_flag=False):
         """
         This returns final block
         """
-        block = torch.nn.Sequential(
-                torch.nn.Conv3d(kernel_size=kernel_size, in_channels=mid_channel, out_channels=out_channels, padding=1),
-                torch.nn.LeakyReLU(),
-                # torch.nn.BatchNorm3d(out_channels),
-                )
+        if not unc_flag:
+            block = torch.nn.Sequential(
+                    torch.nn.Conv3d(kernel_size=kernel_size, in_channels=mid_channel, out_channels=out_channels, padding=1),
+                    torch.nn.LeakyReLU(),
+                    # torch.nn.BatchNorm3d(out_channels),
+                    )
+        else:
+            block = torch.nn.Sequential(
+                    torch.nn.Conv3d(kernel_size=kernel_size, in_channels=mid_channel, out_channels=out_channels, padding=1),
+                    torch.nn.Softplus(),
+                    # torch.nn.BatchNorm3d(out_channels),
+            )
         return block
 
-    def __init__(self, in_channel, out_channel, physics_flag=False, physics_input=None, physics_output=0):
+    def __init__(self, in_channel, out_channel, physics_flag=False, physics_input=None, physics_output=0,
+                 uncertainty_flag=None, dropout_level=0.0):
         # Encode
         super(nnUNet, self).__init__()
-        if not physics_flag:
-            physics_output = 0
-        self.conv_encode1 = self.contracting_block(in_channels=in_channel, out_channels=30)
-        self.conv_maxpool1 = torch.nn.MaxPool3d(kernel_size=2)
-        self.conv_encode2 = self.contracting_block(30+physics_output, 60)
-        self.conv_maxpool2 = torch.nn.MaxPool3d(kernel_size=2)
-        self.conv_encode3 = self.contracting_block(60, 120)
-        self.conv_maxpool3 = torch.nn.MaxPool3d(kernel_size=2)
-        self.conv_encode4 = self.contracting_block(120, 240)
-        self.conv_maxpool4 = torch.nn.MaxPool3d(kernel_size=2)
 
         # Physics
         self.physics_flag = physics_flag
+
+        # Uncertainty
+        self.uncertainty_flag = uncertainty_flag
+        self.dropout_level = dropout_level
+
+        if not physics_flag:
+            physics_output = 0
+        if dropout_level != 0.0:
+            exclusive_dropout = 0.05
+        else:
+            exclusive_dropout = 0.0
+        # print(f'The dropout is {dropout_level}')
+        self.conv_encode1 = self.contracting_block(in_channels=in_channel, out_channels=30,
+                                                   block_dropout=exclusive_dropout)
+        self.conv_maxpool1 = torch.nn.MaxPool3d(kernel_size=2)
+        self.conv_encode2 = self.contracting_block(30+physics_output, 60, block_dropout=dropout_level)
+        self.conv_maxpool2 = torch.nn.MaxPool3d(kernel_size=2)
+        self.conv_encode3 = self.contracting_block(60, 120, block_dropout=dropout_level)
+        self.conv_maxpool3 = torch.nn.MaxPool3d(kernel_size=2)
+        self.conv_encode4 = self.contracting_block(120, 240, block_dropout=dropout_level)
+        self.conv_maxpool4 = torch.nn.MaxPool3d(kernel_size=2)
+
         if physics_flag:
             self.phys = self.physics_block(physics_input, physics_output)
 
@@ -108,11 +132,17 @@ class nnUNet(nn.Module):
                             torch.nn.Upsample(scale_factor=2, mode='trilinear', align_corners=True)
                             )
         # Decode
-        self.conv_decode3 = self.expansive_block(480, 240, 120)
-        self.conv_decode2 = self.expansive_block(240, 120, 60)
-        self.conv_decode1 = self.expansive_block(120, 60, 30)
-        self.penultimate_layer = self.final_block(60+physics_output, 30)
-        self.final_layer = self.final_block(30, out_channel)
+        self.conv_decode3 = self.expansive_block(480, 240, 120, block_dropout=dropout_level)
+        self.conv_decode2 = self.expansive_block(240, 120, 60, block_dropout=dropout_level)
+        self.conv_decode1 = self.expansive_block(120, 60, 30, block_dropout=dropout_level)
+        self.penultimate_layer = self.penultimate_block(60+physics_output, 30, block_dropout=exclusive_dropout)
+        self.final_layer = self.final_block(30, out_channel, unc_flag=False)
+        
+        # Uncertainty
+        if self.uncertainty_flag:
+            self.unc_conv_decode1 = self.expansive_block(120, 60, 30, block_dropout=dropout_level)
+            self.unc_penultimate_layer = self.penultimate_block(60+physics_output, 30, block_dropout=exclusive_dropout)
+            self.unc_final_layer = self.final_block(30, out_channel, unc_flag=True)
 
     def crop_and_concat(self, upsampled, bypass, crop=False):
         """
@@ -175,5 +205,12 @@ class nnUNet(nn.Module):
 
         features = self.penultimate_layer(decode_block1)
         final_layer = self.final_layer(features)
+        
+        # Uncertainty
+        if self.uncertainty_flag:
+            unc_features = self.unc_penultimate_layer(decode_block1)
+            unc_final_layer = self.unc_final_layer(unc_features)
+            return final_layer, unc_final_layer, features
+        
         # print(f'x17 shape is 2 {final_layer.shape}')
         return final_layer, features

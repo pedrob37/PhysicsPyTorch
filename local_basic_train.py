@@ -279,7 +279,7 @@ else:
     EPOCHS = 100
 
     # Memory related variables
-    patch_size = 80
+    patch_size = 16
     batch_size = 4
     queue_length = batch_size
     samples_per_volume = 1
@@ -298,7 +298,6 @@ label_dir = '/data/Resampled_Data/Labels/GM_Labels'  # '/nfs/home/pedro/COVID/La
 print(img_dir)
 print(label_dir)
 val_batch_size = 4
-
 
 # Read csv + add directory to filenames
 df = pd.read_csv(dataset_csv)

@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,8 +14,8 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 
-from monai.data import NiftiSaver, PNGSaver
-from monai.utils import exact_version, optional_import, GridSampleMode, GridSamplePadMode, InterpolateMode
+from ponai.data import NiftiSaver, PNGSaver
+from ponai.utils import exact_version, optional_import, GridSampleMode, GridSamplePadMode, InterpolateMode
 
 Events, _ = optional_import("ignite.engine", "0.3.0", exact_version, "Events")
 Engine, _ = optional_import("ignite.engine", "0.3.0", exact_version, "Engine")

@@ -46,6 +46,7 @@ class ZNormalization(NormalizationTransform):
         tensor = tensor.clone()
         values = tensor.masked_select(mask)
         mean, std = values.mean(), values.std()
+        # print(f'The tensor mean and std are {mean}, {std}')
         if std == 0:
             return None
         tensor -= mean

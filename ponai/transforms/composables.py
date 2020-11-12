@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of dictionary-based wrappers around the "vanilla" transforms
-defined in :py:class:`monai.transforms.transforms`.
+defined in :py:class:`ponai.transforms.transforms`.
 
 Class names are ended with 'd' to denote dictionary-based transforms.
 """
@@ -18,19 +18,19 @@ Class names are ended with 'd' to denote dictionary-based transforms.
 import numpy as np
 import torch
 
-from monai.data.utils import get_random_patch, get_valid_patch_size
-from monai.networks.layers.simplelayers import GaussianFilter
-from monai.transforms.compose import MapTransform, Randomizable
-from monai.transforms.transforms import (AddChannel, AsChannelFirst, Flip, LoadNifti, NormalizeIntensity, Orientation,
+from ponai.data.utils import get_random_patch, get_valid_patch_size
+from ponai.networks.layers.simplelayers import GaussianFilter
+from ponai.transforms.compose import MapTransform, Randomizable
+from ponai.transforms.transforms import (AddChannel, AsChannelFirst, Flip, LoadNifti, NormalizeIntensity, Orientation,
                                          Rand2DElastic, Rand3DElastic, RandAffine, Rescale, Resize, Rotate, Rotate90,
                                          ScaleIntensityRange, Spacing, SpatialCrop, Zoom, ToTensor, LoadPNG)
-from monai.transforms.utils import (create_grid, generate_pos_neg_label_crop_centers)
-from monai.utils.misc import ensure_tuple
+from ponai.transforms.utils import (create_grid, generate_pos_neg_label_crop_centers)
+from ponai.utils.misc import ensure_tuple
 
 
 class Spacingd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.transforms.Spacing`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.transforms.Spacing`.
 
     This transform assumes the ``data`` dictionary has a field for the input
     data's affine.  The field is created by either ``meta_key_format.format(key,
@@ -44,7 +44,7 @@ class Spacingd(MapTransform):
     if no affine is specified in the input data, defauting to "eye(4)".
 
     see also:
-        :py:class:`monai.transforms.transforms.Spacing`
+        :py:class:`ponai.transforms.transforms.Spacing`
     """
 
     def __init__(self, keys, pixdim, diagonal=False, mode='constant', cval=0,
@@ -104,7 +104,7 @@ class Spacingd(MapTransform):
 
 class Orientationd(MapTransform):
     """
-    Dictionary-based wrapper of :py:class:`monai.transforms.transforms.Orientation`.
+    Dictionary-based wrapper of :py:class:`ponai.transforms.transforms.Orientation`.
 
     This transform assumes the ``data`` dictionary has a field for the input
     data's affine.  The field is created by either ``meta_key_format.format(key,
@@ -170,7 +170,7 @@ class LoadNiftid(MapTransform):
         """
         Args:
             keys (hashable items): keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             as_closest_canonical (bool): if True, load the image as closest to canonical axis format.
             dtype (np.dtype, optional): if not None convert the loaded image to this data type.
             meta_key_format (str): key format to store meta data of the nifti image.
@@ -207,7 +207,7 @@ class LoadPNGd(MapTransform):
         """
         Args:
             keys (hashable items): keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             dtype (np.dtype, optional): if not None convert the loaded image to this data type.
         """
         MapTransform.__init__(self, keys)
@@ -229,7 +229,7 @@ class AsChannelFirstd(MapTransform):
         """
         Args:
             keys (hashable items): keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             channel_dim (int): which dimension of input image is the channel, default is the last dimension.
         """
         MapTransform.__init__(self, keys)
@@ -251,7 +251,7 @@ class AddChanneld(MapTransform):
         """
         Args:
             keys (hashable items): keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
         """
         MapTransform.__init__(self, keys)
         self.adder = AddChannel()
@@ -272,7 +272,7 @@ class ToTensord(MapTransform):
         """
         Args:
             keys (hashable items): keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
         """
         MapTransform.__init__(self, keys)
         self.converter = ToTensor()
@@ -331,7 +331,7 @@ class Resized(MapTransform):
 
     Args:
         keys (hashable items): keys of the corresponding items to be transformed.
-            See also: :py:class:`monai.transforms.compose.MapTransform`
+            See also: :py:class:`ponai.transforms.compose.MapTransform`
         output_spatial_shape (tuple or list): expected shape of spatial dimensions after resize operation.
         order (int): Order of spline interpolation. Default=1.
         mode (str): Points outside boundaries are filled according to given mode.
@@ -397,7 +397,7 @@ class RandRotate90d(Randomizable, MapTransform):
         """
         Args:
             keys (hashable items): keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
             prob (float): probability of rotating.
                 (Default 0.1, with 10% probability it returns a rotated array.)
             max_k (int): number of rotations will be sampled from `np.random.randint(max_k) + 1`.
@@ -436,7 +436,7 @@ class NormalizeIntensityd(MapTransform):
 
     Args:
         keys (hashable items): keys of the corresponding items to be transformed.
-            See also: monai.transform.composables.MapTransform
+            See also: ponai.transform.composables.MapTransform
         subtrahend (ndarray): the amount to subtract by (usually the mean)
         divisor (ndarray): the amount to divide by (usually the standard deviation)
     """
@@ -458,7 +458,7 @@ class ScaleIntensityRanged(MapTransform):
 
     Args:
         keys (hashable items): keys of the corresponding items to be transformed.
-            See also: monai.transform.composables.MapTransform
+            See also: ponai.transform.composables.MapTransform
         a_min (int or float): intensity original range min.
         a_max (int or float): intensity original range max.
         b_min (int or float): intensity target range min.
@@ -541,7 +541,7 @@ class RandCropByPosNegLabeld(Randomizable, MapTransform):
 
 class RandAffined(Randomizable, MapTransform):
     """
-    A dictionary-based wrapper of :py:class:`monai.transforms.transforms.RandAffine`.
+    A dictionary-based wrapper of :py:class:`ponai.transforms.transforms.RandAffine`.
     """
 
     def __init__(self, keys,
@@ -566,7 +566,7 @@ class RandAffined(Randomizable, MapTransform):
             device (torch.device): device on which the tensor will be allocated.
 
         See also:
-            - :py:class:`monai.transforms.compose.MapTransform`
+            - :py:class:`ponai.transforms.compose.MapTransform`
             - :py:class:`RandAffineGrid` for the random affine parameters configurations.
         """
         MapTransform.__init__(self, keys)
@@ -609,7 +609,7 @@ class RandAffined(Randomizable, MapTransform):
 
 class Rand2DElasticd(Randomizable, MapTransform):
     """
-    A dictionary-based wrapper of :py:class:`monai.transforms.transforms.Rand2DElastic`.
+    A dictionary-based wrapper of :py:class:`ponai.transforms.transforms.Rand2DElastic`.
     """
 
     def __init__(self, keys,
@@ -680,7 +680,7 @@ class Rand2DElasticd(Randomizable, MapTransform):
 
 class Rand3DElasticd(Randomizable, MapTransform):
     """
-    A dictionary-based wrapper of :py:class:`monai.transforms.transforms.Rand3DElastic`.
+    A dictionary-based wrapper of :py:class:`ponai.transforms.transforms.Rand3DElastic`.
     """
 
     def __init__(self, keys,
@@ -986,7 +986,7 @@ class DeleteKeysd(MapTransform):
         """
         Args:
             keys (hashable items): keys of the corresponding items to be transformed.
-                See also: :py:class:`monai.transforms.compose.MapTransform`
+                See also: :py:class:`ponai.transforms.compose.MapTransform`
         """
         MapTransform.__init__(self, keys)
 

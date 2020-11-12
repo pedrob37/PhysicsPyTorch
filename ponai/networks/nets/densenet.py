@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,7 +15,7 @@ from typing import Callable, Any
 import torch
 import torch.nn as nn
 
-from monai.networks.layers.factories import Conv, Dropout, Pool, Norm
+from ponai.networks.layers.factories import Conv, Dropout, Pool, Norm
 
 
 class _DenseLayer(nn.Sequential):

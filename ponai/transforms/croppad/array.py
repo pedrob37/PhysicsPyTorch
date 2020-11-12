@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,17 +10,17 @@
 # limitations under the License.
 """
 A collection of "vanilla" transforms for crop and pad operations
-https://github.com/Project-MONAI/MONAI/wiki/MONAI_Design
+https://github.com/Project-ponai/ponai/wiki/ponai_Design
 """
 
 from typing import Callable, Optional, Union, List
 
 import numpy as np
-from monai.config import IndexSelection
-from monai.data.utils import get_random_patch, get_valid_patch_size
-from monai.transforms.compose import Randomizable, Transform
-from monai.transforms.utils import generate_pos_neg_label_crop_centers, generate_spatial_bounding_box
-from monai.utils import ensure_tuple, ensure_tuple_rep, fall_back_tuple, NumpyPadMode, Method
+from ponai.config import IndexSelection
+from ponai.data.utils import get_random_patch, get_valid_patch_size
+from ponai.transforms.compose import Randomizable, Transform
+from ponai.transforms.utils import generate_pos_neg_label_crop_centers, generate_spatial_bounding_box
+from ponai.utils import ensure_tuple, ensure_tuple_rep, fall_back_tuple, NumpyPadMode, Method
 
 
 class SpatialPad(Transform):
@@ -157,7 +157,7 @@ class DivisiblePad(Transform):
                 One of the listed string values or a user supplied function. Defaults to ``"constant"``.
                 See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
 
-        See also :py:class:`monai.transforms.SpatialPad`
+        See also :py:class:`ponai.transforms.SpatialPad`
         """
         self.k = k
         self.mode: NumpyPadMode = NumpyPadMode(mode)

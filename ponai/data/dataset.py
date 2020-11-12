@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -21,8 +21,8 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset as _TorchDataset
 
-from monai.transforms import apply_transform, Compose, Randomizable, Transform
-from monai.utils import get_seed, progress_bar
+from ponai.transforms import apply_transform, Compose, Randomizable, Transform
+from ponai.utils import get_seed, progress_bar
 
 
 class Dataset(_TorchDataset):
@@ -205,7 +205,7 @@ class CacheDataset(Dataset):
 
     By caching the results of non-random preprocessing transforms, it accelerates the training data pipeline.
     If the requested data is not in the cache, all transforms will run normally
-    (see also :py:class:`monai.data.dataset.Dataset`).
+    (see also :py:class:`ponai.data.dataset.Dataset`).
 
     Users can set the cache rate or number of items to cache.
     It is recommended to experiment with different `cache_num` or `cache_rate` to identify the best training speed.
@@ -346,7 +346,7 @@ class ArrayDataset(Randomizable, _TorchDataset):
     """
     Dataset for segmentation and classification tasks based on array format input data and transforms.
     It ensures the same random seeds in the randomized transforms defined for image, segmentation and label.
-    The `transform` can be :py:class:`monai.transforms.Compose` or any other callable object.
+    The `transform` can be :py:class:`ponai.transforms.Compose` or any other callable object.
     For example:
     If train based on Nifti format images without metadata, all transforms can be composed::
 

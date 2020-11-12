@@ -46,6 +46,7 @@ class RandomNoise(RandomTransform):
             random_parameters_dict = {'std': std}
             random_parameters_images_dict[image_name] = random_parameters_dict
             image_dict[DATA] = add_noise(image_dict[DATA], mean, std)
+            # raise RuntimeWarning(f'The spatial shape is {image_dict[DATA].shape}')
         sample.add_transform(self, random_parameters_images_dict)
         return sample
 

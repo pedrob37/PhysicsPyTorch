@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # limitations under the License.
 """
 A collection of "vanilla" transforms for spatial operations
-https://github.com/Project-MONAI/MONAI/wiki/MONAI_Design
+https://github.com/Project-ponai/ponai/wiki/ponai_Design
 """
 
 import warnings
@@ -19,12 +19,12 @@ from typing import List, Optional, Union, Tuple, Sequence, Iterable
 import numpy as np
 import torch
 
-from monai.config import get_torch_version_tuple
-from monai.data.utils import compute_shape_offset, to_affine_nd, zoom_affine
-from monai.networks.layers import AffineTransform, GaussianFilter
-from monai.transforms.compose import Randomizable, Transform
-from monai.transforms.croppad.array import CenterSpatialCrop
-from monai.transforms.utils import (
+from ponai.config import get_torch_version_tuple
+from ponai.data.utils import compute_shape_offset, to_affine_nd, zoom_affine
+from ponai.networks.layers import AffineTransform, GaussianFilter
+from ponai.transforms.compose import Randomizable, Transform
+from ponai.transforms.croppad.array import CenterSpatialCrop
+from ponai.transforms.utils import (
     create_control_grid,
     create_grid,
     create_rotate,
@@ -32,7 +32,7 @@ from monai.transforms.utils import (
     create_shear,
     create_translate,
 )
-from monai.utils import (
+from ponai.utils import (
     optional_import,
     GridSampleMode,
     GridSamplePadMode,
@@ -342,7 +342,7 @@ class Resize(Transform):
 
 class Rotate(Transform):
     """
-    Rotates an input image by given angle using :py:class:`monai.networks.layers.AffineTransform`.
+    Rotates an input image by given angle using :py:class:`ponai.networks.layers.AffineTransform`.
 
     Args:
         angle: Rotation angle(s) in degrees. should a float for 2D, three floats for 3D.
@@ -438,7 +438,7 @@ class Zoom(Transform):
     Zooms an ND image using :py:class:`torch.nn.functional.interpolate`.
     For details, please see https://pytorch.org/docs/stable/nn.functional.html#interpolate.
 
-    Different from :py:class:`monai.transforms.resize`, this transform takes scaling factors
+    Different from :py:class:`ponai.transforms.resize`, this transform takes scaling factors
     as input, and provides an option of preserving the input spatial size.
 
     Args:
@@ -887,10 +887,10 @@ class RandAffineGrid(Randomizable, Transform):
             device: device to store the output grid data.
 
         See also:
-            - :py:meth:`monai.transforms.utils.create_rotate`
-            - :py:meth:`monai.transforms.utils.create_shear`
-            - :py:meth:`monai.transforms.utils.create_translate`
-            - :py:meth:`monai.transforms.utils.create_scale`
+            - :py:meth:`ponai.transforms.utils.create_rotate`
+            - :py:meth:`ponai.transforms.utils.create_shear`
+            - :py:meth:`ponai.transforms.utils.create_translate`
+            - :py:meth:`ponai.transforms.utils.create_scale`
         """
         self.rotate_range = ensure_tuple(rotate_range)
         self.shear_range = ensure_tuple(shear_range)

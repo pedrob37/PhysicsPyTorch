@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,8 +14,8 @@ from typing import Hashable, Iterable, Union, Collection
 
 """Commonly used concepts
 This module provides naming and type specifications for commonly used concepts
-within the MONAI package. The intent is to explicitly identify information
-that should be used consistently throughout the entire MONAI package.
+within the ponai package. The intent is to explicitly identify information
+that should be used consistently throughout the entire ponai package.
 
 A type would be named as type_definitions.KeysCollection
 which includes a meaningful name for the concent in the name itself. The

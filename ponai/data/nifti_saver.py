@@ -1,4 +1,4 @@
-# Copyright 2020 MONAI Consortium
+# Copyright 2020 ponai Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,9 +14,9 @@ from typing import Optional, Union
 import numpy as np
 import torch
 
-from monai.data.nifti_writer import write_nifti
-from monai.data.utils import create_file_basename
-from monai.utils import GridSampleMode, GridSamplePadMode
+from ponai.data.nifti_writer import write_nifti
+from ponai.data.utils import create_file_basename
+from ponai.utils import GridSampleMode, GridSamplePadMode
 
 
 class NiftiSaver:
@@ -84,7 +84,7 @@ class NiftiSaver:
             meta_data (dict): the meta data information corresponding to the data.
 
         See Also
-            :py:meth:`monai.data.nifti_writer.write_nifti`
+            :py:meth:`ponai.data.nifti_writer.write_nifti`
         """
         filename = meta_data["filename_or_obj"] if meta_data else str(self._data_index)
         self._data_index += 1
