@@ -1,0 +1,14 @@
+# Non-generation job example (MPRAGE)
+physics_submitter phys-unc-strat-50-dropout-cuda-direct personal ~/PhysicsPyTorch/basic_train.py /nfs/project/pborges/Resampled_Data/SS_GM_Images/ /nfs/project/pborges/Resampled_Data/GM_Labels/ ~/PhysicsPyTorch/local_physics_csv.csv stratification True 128 50 False 0.5 '' mprage
+
+# Generation job example (MPRAGE)
+physics_submitter base-mprage-generation-test-stand-dropout personal ~/PhysicsPyTorch/mpm_basic_train.py /nfs/project/pborges/Resampled_Data/SS_resampled_MPMs/ /nfs/project/pborges/Resampled_Data/MPM_GM_Labels/ ~/PhysicsPyTorch/MPM_physics_csv_folds.csv stratification False 128 50 False 0.5 '' mprage
+
+# Single loader generation job example (MPRAGE)
+physics_submitter single-load-mprage-gen-test personal ~/PhysicsPyTorch/single_load_mpm_basic_train.py /nfs/project/pborges/Resampled_Data/SS_resampled_MPMs/ /nfs/project/pborges/Resampled_Data/MPM_GM_Labels/ ~/PhysicsPyTorch/MPM_physics_csv_folds.csv stratification True 128 50 False 0.5 '' mprage
+
+# Uncertainty analysis script (Creates quantitative + qualitative volumes for analysis)
+uncertainty_analysis.sh dropout-processing-test ~/PhysicsPyTorch/logger/Figures/ood-mprage-generation-test-dropout 100 True
+
+# Volume consistency + BA plot script
+vol_consistency_script.sh mprage-base-gen-test ood-mprage-generation-test-dropout ood-base-mprage-generation-test-stand 
