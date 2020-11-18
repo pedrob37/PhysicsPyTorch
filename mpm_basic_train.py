@@ -1074,116 +1074,121 @@ else:
     latest_epoch = 0
     latest_fold = 0
 
-print('\nStarting training!')
-loop_switch = True
+print(f'\nStarted {training_mode}-ing!')
+# loop_switch = True
 for fold in range(latest_fold, num_folds):
-    while loop_switch:
-        print('\nFOLD', fold)
-        # Pre-loading sequence
-        model = nnUNet(1, 2, physics_flag=physics_flag, physics_input=physics_input_size[physics_experiment_type],
-                       physics_output=40, uncertainty_flag=uncertainty_flag, dropout_level=dropout_level)
-        model = nn.DataParallel(model)
-        # optimizer = RangerLars(model.parameters())
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9)
+    # while loop_switch:
+    print('\nFOLD', fold)
+    # Pre-loading sequence
+    model = nnUNet(1, 2, physics_flag=physics_flag, physics_input=physics_input_size[physics_experiment_type],
+                   physics_output=40, uncertainty_flag=uncertainty_flag, dropout_level=dropout_level)
+    model = nn.DataParallel(model)
+    # optimizer = RangerLars(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9)
 
-        # Early Stopping
-        early_stopping = pytorchtools.EarlyStopping(patience=9, verbose=True)
+    # Early Stopping
+    early_stopping = pytorchtools.EarlyStopping(patience=9, verbose=True)
 
-        # Running lists
-        running_val_names = []
-        running_val_metric = []
-        running_gm_volumes = []
-        running_gm_volumes2 = []
+    # Running lists
+    running_val_names = []
+    running_val_metric = []
+    running_gm_volumes = []
+    running_gm_volumes2 = []
 
-        # Specific fold writer
-        writer = SummaryWriter(log_dir=os.path.join(log_dir, f'fold_{fold}'))
+    # Specific fold writer
+    writer = SummaryWriter(log_dir=os.path.join(log_dir, f'fold_{fold}'))
 
-        if LOAD and num_files > 0 and training_mode != 'inference':
-            # Get model file specific to fold
-            loaded_model_file = f'model_epoch_{loaded_epoch}_fold_{fold}.pth'
-            checkpoint = torch.load(os.path.join(SAVE_PATH, loaded_model_file), map_location=torch.device('cuda:0'))
-            # Main model variables
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            # Get the validation entries from previous folds!
-            running_val_names = checkpoint['running_val_names']
-            running_val_metric = checkpoint['running_val_metric']
-            running_gm_volumes = checkpoint['running_gm_volumes']
-            try:
-                running_gm_volumes2 = checkpoint['running_gm_volumes2']
-            except:
-                print('Missing running volumes2')
-            overall_val_names = checkpoint['overall_val_names']
-            overall_val_metric = checkpoint['overall_val_metric']
-            overall_gm_volumes = checkpoint['overall_gm_volumes']
-            try:
-                overall_gm_volumes2 = checkpoint['overall_gm_volumes2']
-            except:
-                print('Missing overall volumes2')
-            # Ensure that no more loading is done for future folds
-            LOAD = False
-        elif LOAD and num_files > 0 and training_mode == 'inference':
-            # Get model file specific to fold
-            # try:
-            #     best_model_file = glob.glob(os.path.join(SAVE_PATH, f'best_model_epoch_*_fold_{fold}.pth'))
-            # except:
-            best_model_file = f'model_epoch_{loaded_epoch}_fold_{fold}.pth'
-            print(f'Loading checkpoint for model: {best_model_file}')
-            checkpoint = torch.load(os.path.join(SAVE_PATH, best_model_file), map_location=torch.device('cuda:0'))
-            # Main model variables
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            # Get the validation entries from previous folds!
-            running_val_names = checkpoint['running_val_names']
-            running_val_metric = checkpoint['running_val_metric']
-            running_gm_volumes = checkpoint['running_gm_volumes']
-            try:
-                running_gm_volumes2 = checkpoint['running_gm_volumes2']
-            except:
-                print('Missing running volumes2')
-            overall_val_names = checkpoint['overall_val_names']
-            overall_val_metric = checkpoint['overall_val_metric']
-            overall_gm_volumes = checkpoint['overall_gm_volumes']
-            try:
-                overall_gm_volumes2 = checkpoint['overall_gm_volumes2']
-            except:
-                print('Missing overall volumes2')
+    if LOAD and num_files > 0 and training_mode != 'inference':
+        # Get model file specific to fold
+        loaded_model_file = f'model_epoch_{loaded_epoch}_fold_{fold}.pth'
+        checkpoint = torch.load(os.path.join(SAVE_PATH, loaded_model_file), map_location=torch.device('cuda:0'))
+        # Main model variables
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # Get the validation entries from previous folds!
+        running_val_names = checkpoint['running_val_names']
+        running_val_metric = checkpoint['running_val_metric']
+        running_gm_volumes = checkpoint['running_gm_volumes']
+        try:
+            running_gm_volumes2 = checkpoint['running_gm_volumes2']
+        except:
+            print('Missing running volumes2')
+        overall_val_names = checkpoint['overall_val_names']
+        overall_val_metric = checkpoint['overall_val_metric']
+        overall_gm_volumes = checkpoint['overall_gm_volumes']
+        try:
+            overall_gm_volumes2 = checkpoint['overall_gm_volumes2']
+        except:
+            print('Missing overall volumes2')
+        # Ensure that no more loading is done for future folds
+        LOAD = False
+    elif LOAD and num_files > 0 and training_mode == 'inference':
+        # Get model file specific to fold
+        # try:
+        #     best_model_file = glob.glob(os.path.join(SAVE_PATH, f'best_model_epoch_*_fold_{fold}.pth'))
+        # except:
+        best_model_file = f'model_epoch_{loaded_epoch}_fold_{fold}.pth'
+        print(f'Loading checkpoint for model: {best_model_file}')
+        checkpoint = torch.load(os.path.join(SAVE_PATH, best_model_file), map_location=torch.device('cuda:0'))
+        # Main model variables
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # Get the validation entries from previous folds!
+        running_val_names = checkpoint['running_val_names']
+        running_val_metric = checkpoint['running_val_metric']
+        running_gm_volumes = checkpoint['running_gm_volumes']
+        try:
+            running_gm_volumes2 = checkpoint['running_gm_volumes2']
+        except:
+            print('Missing running volumes2')
+        overall_val_names = checkpoint['overall_val_names']
+        overall_val_metric = checkpoint['overall_val_metric']
+        overall_gm_volumes = checkpoint['overall_gm_volumes']
+        try:
+            overall_gm_volumes2 = checkpoint['overall_gm_volumes2']
+        except:
+            print('Missing overall volumes2')
 
-        if stacked_cv:  # Pretty much never use this one
-            # Train / Val/ Inf split
-            val_fold = fold
-            inf_fold = num_folds - fold - 1
-            excluded_folds = [val_fold, inf_fold]
-            train_df = df[~df.fold.isin(excluded_folds)]
-            # if not OOD_flag:
-            val_df = df[df.fold == val_fold]
-            inf_df = df[df.fold == inf_fold]
-            # else:
-            #     val_df = OOD_df[OOD_df.fold == val_fold]
-            #     inf_df = OOD_df[OOD_df.fold == inf_fold]
-            train_df.reset_index(drop=True, inplace=True)
-            val_df.reset_index(drop=True, inplace=True)
-            inf_df.reset_index(drop=True, inplace=True)
-        else:
-            # Train / Val split
-            val_fold = fold
-            excluded_folds = [val_fold]
-            train_df = df[~df.fold.isin(excluded_folds)]
-            # if not OOD_flag:
-            val_df = df[df.fold == val_fold]
-            # else:
-            #     val_df = OOD_df[OOD_df.fold == val_fold]
-            train_df.reset_index(drop=True, inplace=True)
-            val_df.reset_index(drop=True, inplace=True)
+    if stacked_cv:  # Pretty much never use this one
+        # Train / Val/ Inf split
+        val_fold = fold
+        inf_fold = num_folds - fold - 1
+        excluded_folds = [val_fold, inf_fold]
+        train_df = df[~df.fold.isin(excluded_folds)]
+        # if not OOD_flag:
+        val_df = df[df.fold == val_fold]
+        inf_df = df[df.fold == inf_fold]
+        # else:
+        #     val_df = OOD_df[OOD_df.fold == val_fold]
+        #     inf_df = OOD_df[OOD_df.fold == inf_fold]
+        train_df.reset_index(drop=True, inplace=True)
+        val_df.reset_index(drop=True, inplace=True)
+        inf_df.reset_index(drop=True, inplace=True)
+    else:
+        # Train / Val split
+        val_fold = fold
+        excluded_folds = [val_fold]
+        train_df = df[~df.fold.isin(excluded_folds)]
+        # if not OOD_flag:
+        val_df = df[df.fold == val_fold]
+        # else:
+        #     val_df = OOD_df[OOD_df.fold == val_fold]
+        train_df.reset_index(drop=True, inplace=True)
+        val_df.reset_index(drop=True, inplace=True)
 
-        print(f'The length of the training is {len(train_df)}')
-        print(f'The length of the validation is {len(val_df)}')
-        print(f'The length of the inference is {len(inf_df)}')
+    print(f'The length of the training is {len(train_df)}')
+    print(f'The length of the validation is {len(val_df)}')
+    print(f'The length of the inference is {len(inf_df)}')
 
-        model.cuda()
-        print('\nStarting training!')
-        for epoch in range(loaded_epoch, EPOCHS):
+    model.cuda()
+    print(f'\nStarted {training_mode}-ing!')
+    if training_mode == 'inference':
+        # Quick fix to get around inference running EPOCHS - loaded_epoch number of times!
+        # Ensure only one loop's worth of inferences are run, as desired
+        loaded_epoch = EPOCHS - 1
+    for epoch in range(loaded_epoch, EPOCHS):
+        if training_mode != 'inference':
             print(f'Training Epoch: {epoch}')
             running_loss = 0.0
             model.train()
@@ -1214,285 +1219,129 @@ for fold in range(latest_fold, num_folds):
             # Patch test
             if patch_test and epoch == 0 and fold == 0:
                 visualise_batch_patches(loader=train_loader, bs=batch_size, ps=patch_size, comparisons=4)
-            if training_mode != 'inference':
-                for i, sample in enumerate(train_loader):
-                    if i != 0:
-                        print(f'The time between iterations was {time.time() - start}')
-                    start = time.time()
-                    images = sample['mri']['data'].cuda()
-                    labels = sample['seg']['data'].cuda()
-                    physics = sample['physics'].cuda().float().squeeze()
-                    names = sample['mri']['path']
-                    names = [os.path.basename(name) for name in names]
+            for i, sample in enumerate(train_loader):
+                if i != 0:
+                    print(f'The time between iterations was {time.time() - start}')
+                start = time.time()
+                images = sample['mri']['data'].cuda()
+                labels = sample['seg']['data'].cuda()
+                physics = sample['physics'].cuda().float().squeeze()
+                names = sample['mri']['path']
+                names = [os.path.basename(name) for name in names]
 
-                    # print(f'The physics are {physics}')
-                    # print(f'The physics shapes are {physics.shape}')
-                    # print(f'The image shapes are {images.shape}')
-                    # print(f'The names are {names}')
-                    # Need to replace names to include physics (3 decimal points should suffice)
-                    new_names = []
-                    affine_array = np.array([[-1, 0, 0, 89],
-                                             [0, 1, 0, -125],
-                                             [0, 0, 1, -71],
-                                             [0, 0, 0, 1]])
-                    for k in range(4):
-                        if physics_experiment_type == 'MPRAGE':
-                            new_names.append(names[k].rsplit('.nii.gz')[0] + f'_TI_{physics[k]:.5f}' + '.nii.gz')
-                        elif physics_experiment_type == 'SPGR':
-                            new_names.append(names[k].rsplit('.nii.gz')[0] + f'_TR_{physics[k, 0]:.5f}'
-                                             + f'_TE_{physics[k, 1]:.5f}'
-                                             + f'_FA_{physics[k, 2]:.2f}'
-                                             + '.nii.gz')
-                        # save_img(images[k, ...].squeeze().detach().cpu().numpy(), affine_array,
-                        #          os.path.join(FIG_PATH, os.path.basename(new_names[k])))
-                        # print(f'The min and max of the images is {images[k, ...].squeeze().detach().cpu().numpy().min()},'
-                        #       f'{images[k, ...].squeeze().detach().cpu().numpy().max()}')
-                    names = new_names
-                    # print(f'The new names are {names}')
+                # print(f'The physics are {physics}')
+                # print(f'The physics shapes are {physics.shape}')
+                # print(f'The image shapes are {images.shape}')
+                # print(f'The names are {names}')
+                # Need to replace names to include physics (3 decimal points should suffice)
+                new_names = []
+                affine_array = np.array([[-1, 0, 0, 89],
+                                         [0, 1, 0, -125],
+                                         [0, 0, 1, -71],
+                                         [0, 0, 0, 1]])
+                for k in range(4):
+                    if physics_experiment_type == 'MPRAGE':
+                        new_names.append(names[k].rsplit('.nii.gz')[0] + f'_TI_{physics[k]:.5f}' + '.nii.gz')
+                    elif physics_experiment_type == 'SPGR':
+                        new_names.append(names[k].rsplit('.nii.gz')[0] + f'_TR_{physics[k, 0]:.5f}'
+                                         + f'_TE_{physics[k, 1]:.5f}'
+                                         + f'_FA_{physics[k, 2]:.2f}'
+                                         + '.nii.gz')
+                    # save_img(images[k, ...].squeeze().detach().cpu().numpy(), affine_array,
+                    #          os.path.join(FIG_PATH, os.path.basename(new_names[k])))
+                    # print(f'The min and max of the images is {images[k, ...].squeeze().detach().cpu().numpy().min()},'
+                    #       f'{images[k, ...].squeeze().detach().cpu().numpy().max()}')
+                names = new_names
+                # print(f'The new names are {names}')
 
-                    # Zero grad optimizer
-                    optimizer.zero_grad()
-                    # print(images.shape, labels.shape, physics.shape)
-                    # Pass images to the model
-                    if not uncertainty_flag:
-                        if physics_flag:
-                            # Calculate physics extensions
-                            processed_physics = physics_preprocessing(physics, physics_experiment_type)
-                            # print(f'The physics are {names}, {physics}, {processed_physics}')
-                            # print(f'Processed physics shape is {processed_physics.shape}')
-                            # print(processed_physics.shape, images.shape)
-                            out, features_out = model(images, processed_physics)
-                        else:
-                            out, features_out = model(images)
-                        # Loss
-                        eps = 1e-10
-                        loss_start = time.time()
-                        data_loss = F.binary_cross_entropy_with_logits(out + eps, labels, reduction='mean')
-                        loss_end = time.time()
+                # Zero grad optimizer
+                optimizer.zero_grad()
+                # print(images.shape, labels.shape, physics.shape)
+                # Pass images to the model
+                if not uncertainty_flag:
+                    if physics_flag:
+                        # Calculate physics extensions
+                        processed_physics = physics_preprocessing(physics, physics_experiment_type)
+                        # print(f'The physics are {names}, {physics}, {processed_physics}')
+                        # print(f'Processed physics shape is {processed_physics.shape}')
+                        # print(processed_physics.shape, images.shape)
+                        out, features_out = model(images, processed_physics)
                     else:
-                        if physics_flag:
-                            # Calculate physics extensions
-                            processed_physics = physics_preprocessing(physics, physics_experiment_type)
-                            # print(f'Processed physics shape is {processed_physics.shape}')
-                            out, unc_out, features_out = model(images, processed_physics)
-                        # print(f'Images shape is {images.shape}')
-                        else:
-                            out, unc_out, features_out = model(images)
-                        loss_start = time.time()
-                        data_loss, data_vol_std = corrected_paper_stochastic_loss(out, unc_out, labels,
-                                                                                  num_passes=num_loss_passes)
-                        loss_end = time.time()
+                        out, features_out = model(images)
+                    # Loss
+                    eps = 1e-10
+                    loss_start = time.time()
+                    data_loss = F.binary_cross_entropy_with_logits(out + eps, labels, reduction='mean')
+                    loss_end = time.time()
+                else:
+                    if physics_flag:
+                        # Calculate physics extensions
+                        processed_physics = physics_preprocessing(physics, physics_experiment_type)
+                        # print(f'Processed physics shape is {processed_physics.shape}')
+                        out, unc_out, features_out = model(images, processed_physics)
+                    # print(f'Images shape is {images.shape}')
+                    else:
+                        out, unc_out, features_out = model(images)
+                    loss_start = time.time()
+                    data_loss, data_vol_std = corrected_paper_stochastic_loss(out, unc_out, labels,
+                                                                              num_passes=num_loss_passes)
+                    loss_end = time.time()
 
-                    if training_mode == 'standard':
-                        loss = data_loss
-                        total_feature_loss = 0.1 * dynamic_calc_feature_loss(
-                            features_out, tm='stratification')  # NOTE: This needs to be the feature tensor!
-                        writer.add_scalar('Loss/Feature_loss', total_feature_loss, running_iter)
+                if training_mode == 'standard':
+                    loss = data_loss
+                    total_feature_loss = 0.1 * dynamic_calc_feature_loss(
+                        features_out, tm='stratification')  # NOTE: This needs to be the feature tensor!
+                    writer.add_scalar('Loss/Feature_loss', total_feature_loss, running_iter)
 
-                    elif training_mode == 'stratification' or training_mode == 'kld':
-                        total_feature_loss = 0.1 * dynamic_calc_feature_loss(
-                            features_out, tm=training_mode)  # NOTE: This needs to be the feature tensor!
-                        # regulatory_ratio = data_loss / total_feature_loss
+                elif training_mode == 'stratification' or training_mode == 'kld':
+                    total_feature_loss = 0.1 * dynamic_calc_feature_loss(
+                        features_out, tm=training_mode)  # NOTE: This needs to be the feature tensor!
+                    # regulatory_ratio = data_loss / total_feature_loss
 
-                        loss = data_loss + stratification_epsilon * total_feature_loss / (
-                                1 + dynamic_stratification_checker(labels) * float(1e9)) ** 2
-                        writer.add_scalar('Loss/Feature_loss', total_feature_loss, running_iter)
+                    loss = data_loss + stratification_epsilon * total_feature_loss / (
+                            1 + dynamic_stratification_checker(labels) * float(1e9)) ** 2
+                    writer.add_scalar('Loss/Feature_loss', total_feature_loss, running_iter)
 
-                    # Softmax to convert to probabilities
-                    out = torch.softmax(out, dim=1)
+                # Softmax to convert to probabilities
+                out = torch.softmax(out, dim=1)
 
-                    # pGM = PairwiseMeasures(labels[:, 0, ...].detach().cpu().numpy(), out[:, 0, ...].detach().cpu().numpy())
-                    # print(pGM.dice_score())
-                    pGM_dice = soft_dice_score(labels.cpu().detach().numpy(), out.cpu().detach().numpy())
-                    # print(pGM_dice)
+                # pGM = PairwiseMeasures(labels[:, 0, ...].detach().cpu().numpy(), out[:, 0, ...].detach().cpu().numpy())
+                # print(pGM.dice_score())
+                pGM_dice = soft_dice_score(labels.cpu().detach().numpy(), out.cpu().detach().numpy())
+                # print(pGM_dice)
 
-                    # for param in model.parameters():
-                    #     param.grad = None
-                    # optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
-                    running_loss += loss.detach().cpu().item()
+                # for param in model.parameters():
+                #     param.grad = None
+                # optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.detach().cpu().item()
 
-                    # Name check: Shuffling sanity check
-                    if i == 0:
-                        print(f'The test names are: {names[0]}, {names[-2]}')
+                # Name check: Shuffling sanity check
+                if i == 0:
+                    print(f'The test names are: {names[0]}, {names[-2]}')
 
-                    # Terminal logging
-                    print(f"iter: {running_iter}, Loss: {loss.detach().item():.4f}, Dice: {pGM_dice:.3f}, "
-                          f"strat: {stratification_checker(labels):.3f}"
-                          f"                            ({loss_end - loss_start:.3f} s) ({(time.time() - start):.3f} s)")
+                # Terminal logging
+                print(f"iter: {running_iter}, Loss: {loss.detach().item():.4f}, Dice: {pGM_dice:.3f}, "
+                      f"strat: {stratification_checker(labels):.3f}"
+                      f"                            ({loss_end - loss_start:.3f} s) ({(time.time() - start):.3f} s)")
 
-                    # Writing to tensorboard
-                    if running_iter % 50 == 0:
-                        # Normalise images
-                        images = normalise_image(images.cpu().detach().numpy())
-                        out = normalise_image(out.cpu().detach().numpy())
-                        labels = normalise_image(labels.cpu().detach().numpy())
+                # Writing to tensorboard
+                if running_iter % 50 == 0:
+                    # Normalise images
+                    images = normalise_image(images.cpu().detach().numpy())
+                    out = normalise_image(out.cpu().detach().numpy())
+                    labels = normalise_image(labels.cpu().detach().numpy())
 
-                        writer.add_scalar('Loss/train', loss.detach().item(), running_iter)
-                        img2tensorboard.add_animated_gif(writer=writer, image_tensor=images[0, ...],
-                                                         tag=f'Visuals/Images_Fold_{fold}', max_out=patch_size // 2,
-                                                         scale_factor=255, global_step=running_iter)
-                        img2tensorboard.add_animated_gif(writer=writer, image_tensor=labels[0, 0, ...][None, ...],
-                                                         tag=f'Visuals/Labels_Fold_{fold}', max_out=patch_size//2,
-                                                         scale_factor=255, global_step=running_iter)
-                        img2tensorboard.add_animated_gif(writer=writer, image_tensor=out[0, 0, ...][None, ...],
-                                                         tag=f'Visuals/Output_Fold_{fold}', max_out=patch_size//2,
-                                                         scale_factor=255, global_step=running_iter)
-                        if uncertainty_flag:
-                            unc_out = unc_out.cpu().detach().numpy()
-                            unc_out = normalise_image(unc_out)
-                            img2tensorboard.add_animated_gif(writer=writer, image_tensor=unc_out[0, 0, ...][None, ...],
-                                                             tag=f'Validation/Unc_Output_Fold_{fold}', max_out=patch_size // 4,
-                                                             scale_factor=255, global_step=running_iter)
-
-                    running_iter += 1
-                    del sample, images, labels, physics, names, out, features_out
-                    if uncertainty_flag:
-                        del unc_out
-                    import gc
-                    gc.collect()
-
-                print("Epoch: {}, Loss: {},\n Train Dice: Not implemented".format(epoch, running_loss))
-
-                print('Validation step')
-                model.eval()
-                val_metric = DiceLoss(include_background=True, to_onehot_y=False, sigmoid=False, softmax=True)
-                val_running_loss = 0
-                # correct = 0
-                val_counter = 0
-                names_collector = []
-                metric_collector = []
-                metric_collector2 = []
-                gm_volumes_collector = []
-                gm_volumes_collector2 = []
-                CoV_collector = []
-                CoV_collector2 = []
-
-                val_start = time.time()
-                if epoch % validation_interval == 0:
-                    with torch.no_grad():
-                        for val_sample in val_loader:
-                            val_images = val_sample['mri']['data'].squeeze().cuda()
-                            val_names = val_sample['mri']['path']
-                            # Readjust dimensions to match expected shape for network
-                            # if len(val_images.shape) == 3:
-                            #     val_images = torch.unsqueeze(torch.unsqueeze(val_images, 0), 0)
-                            # elif len(val_images.shape) == 4:
-                            #     val_images = torch.unsqueeze(val_images, 0)
-                            val_labels = val_sample['seg']['data'].squeeze().cuda()
-                            # print(f'val_images shape is {val_images.shape}')
-                            # print(f'val_labels shape is {val_labels.shape}')
-                            # Readjust dimensions to match expected shape
-                            if len(val_labels.shape) == 4:
-                                val_labels = torch.unsqueeze(val_labels, 1)
-                            if len(val_images.shape) == 4:
-                                val_images = torch.unsqueeze(val_images, 1)
-                            val_physics = val_sample['physics'].squeeze().cuda().float()
-                            val_names = [os.path.basename(val_name) for val_name in val_names]
-
-                            new_names = []
-                            affine_array = np.array([[-1, 0, 0, 89],
-                                                     [0, 1, 0, -125],
-                                                     [0, 0, 1, -71],
-                                                     [0, 0, 0, 1]])
-                            for k in range(4):
-                                if physics_experiment_type == 'MPRAGE':
-                                    new_names.append('val_' + val_names[k].rsplit('.nii.gz')[0]
-                                                     + f'_TI_{val_physics[k]:.5f}'
-                                                     + '.nii.gz')
-                                elif physics_experiment_type == 'SPGR':
-                                    new_names.append('val_' + val_names[k].rsplit('.nii.gz')[0]
-                                                     + f'_TR_{val_physics[k, 0]:.5f}'
-                                                     + f'_TE_{val_physics[k, 1]:.5f}'
-                                                     + f'_FA_{val_physics[k, 2]:.2f}'
-                                                     + '.nii.gz')
-                                # save_img(val_images[k, ...].squeeze().detach().cpu().numpy(), affine_array,
-                                #          os.path.join(FIG_PATH, os.path.basename(new_names[k])))
-                            val_names = new_names
-
-                            # Small name check
-                            # print(f'Val names are {val_names}')
-
-                            # Pass images to the model
-                            if not uncertainty_flag:
-                                if physics_flag:
-                                    # Calculate physics extensions
-                                    val_processed_physics = physics_preprocessing(val_physics, physics_experiment_type)
-                                    # print(f'The val physics are {val_names}, {val_physics}, {val_processed_physics}')
-                                    out, features_out = model(val_images, val_processed_physics)
-                                else:
-                                    out, features_out = model(val_images)
-                                val_data_loss = F.binary_cross_entropy_with_logits(out, val_labels, reduction="mean")
-                            else:
-                                if physics_flag:
-                                    # Calculate physics extensions
-                                    val_processed_physics = physics_preprocessing(val_physics, physics_experiment_type)
-                                    # print(f'Processed physics shape is {processed_physics.shape}')
-                                    out, unc_out, features_out = model(val_images, val_processed_physics)
-                                else:
-                                    out, unc_out, features_out = model(val_images)
-                                val_data_loss, val_data_vol_std = corrected_paper_stochastic_loss(out, unc_out, val_labels,
-                                                                                                  num_passes=num_loss_passes)
-
-                            # Loss depends on training mode
-                            if training_mode == 'standard':
-                                val_loss = val_data_loss
-                            elif training_mode == 'stratification' or training_mode == 'kld':
-                                val_total_feature_loss = 0.1 * dynamic_calc_feature_loss(
-                                    features_out, tm=training_mode)  # NOTE: This needs to be the feature tensor!
-                                # regulatory_ratio = val_data_loss / val_total_feature_loss
-                                val_loss = val_data_loss + stratification_epsilon * val_total_feature_loss / (
-                                            1 + dynamic_stratification_checker(val_labels) * float(1e9)) ** 2
-
-                            # print(f"out val shape is {out.shape}")  # Checking for batch dimension inclusion or not
-                            out = torch.softmax(out, dim=1)
-                            gm_out = out[:, 0, ...]
-
-                            val_running_loss += val_loss.detach().item()
-
-                            # Metric calculation
-                            # print(pGM_dice)
-                            # dice_performance = val_metric.forward(out, val_labels)
-                            gm_volume = gm_out.view(4, -1).sum(1)
-                            names_collector += val_names
-                            gm_volumes_collector += gm_volume
-
-                            # Calculate CoVs
-                            gm_volume_np = gm_volume.cpu().detach().numpy()
-                            val_CoV = np.std(gm_volume_np) / np.mean(gm_volume_np)
-                            for i in range(val_batch_size):
-                                pGM_dice = soft_dice_score(val_labels[i, ...].cpu().detach().numpy(), out[i, ...].cpu().detach().numpy())
-                                metric_collector += [pGM_dice.tolist()]
-                                CoV_collector.append(val_CoV)
-                            # writer.add_scalar('Loss/Val_Feature_loss', val_total_feature_loss, running_iter)
-
-                            # Convert to numpy arrays
-                            val_images = val_images.cpu().detach().numpy()
-                            val_labels = val_labels.cpu().detach().numpy()
-                            val_images = normalise_image(val_images)
-                            out = out.cpu().detach().numpy()
-                            out = normalise_image(out)
-
-                            val_counter += val_batch_size  #Should probably be one to properly match training
-
-                            # Cleaning up
-                            # del val_sample, val_images, val_labels, val_physics, val_names
-
-                    print(f'This validation step took {time.time() - val_start} s')
-                    # Write to tensorboard
-                    writer.add_scalar('Loss/val', val_running_loss / val_counter, running_iter)
-                    writer.add_scalar('Loss/dice_val', np.mean(metric_collector), running_iter)
-                    writer.add_scalar('Loss/CoV', np.mean(CoV_collector), running_iter)
-                    writer.add_scalar('Loss/CoV2', np.mean(CoV_collector2), running_iter)
-                    img2tensorboard.add_animated_gif(writer=writer, image_tensor=val_images[0, ...],
-                                                     tag=f'Validation/Images_Fold_{fold}', max_out=patch_size // 4,
+                    writer.add_scalar('Loss/train', loss.detach().item(), running_iter)
+                    img2tensorboard.add_animated_gif(writer=writer, image_tensor=images[0, ...],
+                                                     tag=f'Visuals/Images_Fold_{fold}', max_out=patch_size // 2,
                                                      scale_factor=255, global_step=running_iter)
-                    img2tensorboard.add_animated_gif(writer=writer, image_tensor=val_labels[0, 0, ...][None, ...],
-                                                     tag=f'Validation/Labels_Fold_{fold}', max_out=patch_size // 4,
+                    img2tensorboard.add_animated_gif(writer=writer, image_tensor=labels[0, 0, ...][None, ...],
+                                                     tag=f'Visuals/Labels_Fold_{fold}', max_out=patch_size//2,
                                                      scale_factor=255, global_step=running_iter)
                     img2tensorboard.add_animated_gif(writer=writer, image_tensor=out[0, 0, ...][None, ...],
-                                                     tag=f'Validation/Output_Fold_{fold}', max_out=patch_size // 4,
+                                                     tag=f'Visuals/Output_Fold_{fold}', max_out=patch_size//2,
                                                      scale_factor=255, global_step=running_iter)
                     if uncertainty_flag:
                         unc_out = unc_out.cpu().detach().numpy()
@@ -1501,319 +1350,473 @@ for fold in range(latest_fold, num_folds):
                                                          tag=f'Validation/Unc_Output_Fold_{fold}', max_out=patch_size // 4,
                                                          scale_factor=255, global_step=running_iter)
 
-                    # Check if current val dice is better than previous best
-                    # true_dice = np.mean(metric_collector)
-                    # true_val = val_running_loss / val_counter  # alternative
-                    # if true_dice > best_val_dice:
-                    #     best_val_dice = true_dice
-                    #     append_string = 'not_best'
-                    #     best_counter = 0
-                    # else:
-                    #     append_string = 'nb'
-                    #     best_counter += 1
+                running_iter += 1
+                del sample, images, labels, physics, names, out, features_out
+                if uncertainty_flag:
+                    del unc_out
+                import gc
+                gc.collect()
 
-                    # Aggregation
-                    running_val_metric.append(np.mean(metric_collector))
-                    running_val_names.append(names_collector)
-                    running_gm_volumes.append(gm_volumes_collector)
-                    running_gm_volumes2.append(gm_volumes_collector2)
+            print("Epoch: {}, Loss: {},\n Train Dice: Not implemented".format(epoch, running_loss))
 
-                    # # Save model
-                    # if SAVE and append_string == 'best':
-                    #     MODEL_PATH = os.path.join(SAVE_PATH, f'model_epoch_{epoch}_fold_{fold}.pth')
-                    #     print(MODEL_PATH)
-                    #     torch.save({'model_state_dict': model.state_dict(),
-                    #                 'optimizer_state_dict': optimizer.state_dict(),
-                    #                 'epoch': epoch,
-                    #                 'loss': loss,
-                    #                 'running_iter': running_iter,
-                    #                 'batch_size': batch_size,
-                    #                 'patch_size': patch_size,
-                    #                 'running_val_names': running_val_names,
-                    #                 'running_val_metric': running_val_metric,
-                    #                 'overall_val_names': overall_val_names,
-                    #                 'overall_val_metric': overall_val_metric}, MODEL_PATH)
+            print('Validation step')
+            model.eval()
+            val_metric = DiceLoss(include_background=True, to_onehot_y=False, sigmoid=False, softmax=True)
+            val_running_loss = 0
+            # correct = 0
+            val_counter = 0
+            names_collector = []
+            metric_collector = []
+            metric_collector2 = []
+            gm_volumes_collector = []
+            gm_volumes_collector2 = []
+            CoV_collector = []
+            CoV_collector2 = []
 
-                    # Saving in-training csv
-                    # print(f'The problematic names seem to be {running_val_names[-1]}')
-                    current_subject_ids = [int(vn.rsplit('.nii.gz')[0].split('_')[4]) for vn in running_val_names[-1]]
-                    print(len(running_val_names[-1]),  # running_val_names,
-                          len(current_subject_ids),  # current_subject_ids,
-                          len(metric_collector),  # metric_collector,
-                          len(CoV_collector),  # CoV_collector,
-                          len(running_gm_volumes[-1]),
-                          len(running_gm_volumes2[-1]))
-                    sub = pd.DataFrame({"Filename": running_val_names[-1],  # Done
-                                        "subject_id": current_subject_ids,  # Done
-                                        "Dice": metric_collector,
-                                        "CoV": CoV_collector,
-                                        "GM_volumes": running_gm_volumes[-1],
-                                        'GM_volumes2': running_gm_volumes[-1]})
-
-                    sub.to_csv(os.path.join(SAVE_PATH, f'val_epoch_{epoch}_fold_{fold}.csv'), index=False)
-
-                    # Saving the model
-                    # Save model
-                    if SAVE:
-                        MODEL_PATH = os.path.join(SAVE_PATH, f'model_epoch_{epoch}_fold_{fold}.pth')
-                        print(MODEL_PATH)
-                        torch.save({'model_state_dict': model.state_dict(),
-                                    'optimizer_state_dict': optimizer.state_dict(),
-                                    'epoch': epoch,
-                                    'loss': loss,
-                                    'running_iter': running_iter,
-                                    'batch_size': batch_size,
-                                    'patch_size': patch_size,
-                                    'running_val_names': running_val_names,
-                                    'running_val_metric': running_val_metric,
-                                    'running_gm_volumes': running_gm_volumes,
-                                    'running_gm_volumes2': running_gm_volumes2,
-                                    'overall_gm_volumes': overall_gm_volumes,
-                                    'overall_gm_volumes2': overall_gm_volumes2,
-                                    'overall_val_names': overall_val_names,
-                                    'overall_val_metric': overall_val_metric}, MODEL_PATH)
-
-                    # Early stopping
-                    early_stopping((np.mean(metric_collector)-val_batch_size*np.mean(CoV_collector)), model)
-
-                    if early_stopping.early_stop or epoch == 60:
-                        # Set overalls to best epoch
-                        best_epoch = int(np.argmax(running_val_metric))
-                        print(f'The best epoch is Epoch {best_epoch}')
-                        overall_val_metric.append(running_val_metric[best_epoch])
-                        overall_val_names.extend(running_val_names[best_epoch])
-                        overall_gm_volumes.extend(running_gm_volumes[best_epoch])
-                        overall_gm_volumes2.extend(running_gm_volumes2[best_epoch])
-
-                        # f = open(os.path.join(SAVE_PATH, f"Best_epoch_{best_epoch}.txt", "x"))
-                        # f.write("Created file")
-                        # f.close()
-
-                        # # Save best model
-                        # BEST_MODEL_PATH = os.path.join(SAVE_PATH, f'best_model_epoch_{best_epoch}_fold_{fold}.pth')
-                        # # Need to re-evaluate this: Not actually saving state of model at best point, only latest point!
-                        # torch.save({'model_state_dict': model.state_dict(),
-                        #             'optimizer_state_dict': optimizer.state_dict(),
-                        #             'epoch': best_epoch,
-                        #             'loss': loss,
-                        #             'running_iter': running_iter,
-                        #             'batch_size': batch_size,
-                        #             'patch_size': patch_size,
-                        #             'running_val_names': running_val_names,
-                        #             'running_val_metric': running_val_metric,
-                        #             'running_gm_volumes': running_gm_volumes,
-                        #             'running_gm_volumes2': running_gm_volumes2,
-                        #             'overall_gm_volumes': overall_gm_volumes,
-                        #             'overall_gm_volumes2': overall_gm_volumes2,
-                        #             'overall_val_names': overall_val_names,
-                        #             'overall_val_metric': overall_val_metric}, BEST_MODEL_PATH)
-                        print('Early stopping!')
-                        break
-                    del val_sample, val_images, val_labels, val_physics, val_names, out, features_out
-                    if uncertainty_flag:
-                        del unc_out
-
-                else:
-                    # Aggregation: Fill with some values so can actually match to best epoch
-                    running_val_metric.append(-1e10)
-                    running_val_names.append(-1e10)
-                    running_gm_volumes.append(-1e10)
-                    running_gm_volumes2.append(-1e10)
-            elif training_mode == 'inference':
-                # model.eval()
+            val_start = time.time()
+            if epoch % validation_interval == 0:
                 with torch.no_grad():
-                    if dropout_level == 0.0:
-                        dropout_samples = 1
-                    else:
-                        dropout_samples = 100
-                    # for inf_sample in inference_set:
-                    #     # Figure out inference, together
-                    #     inf_names = inf_sample['mri']['path']
-                    #     inf_physics = torch.FloatTensor([inf_sample['physics']]).squeeze().cuda().float()
-                    #     if len(inf_physics.shape) <= 4:
-                    #         inf_physics = torch.unsqueeze(inf_physics, 0)
-                    #     grid_sampler = porchio.inference.GridSampler(
-                    #         sample=inf_sample,
-                    #         patch_size=patch_size,
-                    #         patch_overlap=0,
-                    #         padding_mode=None,)
-                    #     patch_loader = torch.utils.data.DataLoader(grid_sampler, batch_size=1)
-                    #     aggregator = porchio.inference.GridAggregator(grid_sampler)
-                    #     for patches_batch in patch_loader:
-                    #         # Variables from sampler
-                    #         input_tensor = patches_batch['mri']['data'].squeeze().cuda()
-                    #         # Manually do Z normalisation
-                    #         ip_mean = input_tensor.mean()
-                    #         ip_std = input_tensor.std()
-                    #         input_tensor -= ip_mean
-                    #         input_tensor /= ip_std
-                    #         if len(input_tensor.shape) <= 4:
-                    #             input_tensor = torch.unsqueeze(input_tensor, 0)
-                    #             if len(input_tensor.shape) == 4:
-                    #                 input_tensor = torch.unsqueeze(input_tensor, 0)
-                    #         locations = patches_batch[porchio.LOCATION]
-                    #         if physics_flag:
-                    #             # Calculate physics extensions
-                    #             inf_processed_physics = physics_preprocessing(inf_physics, physics_experiment_type)
-                    #             print(f'porchio: {input_tensor.shape}, {inf_processed_physics.shape}')
-                    #             out, _ = model(input_tensor, inf_processed_physics)
-                    #         else:
-                    #             out, _ = model(input_tensor)
-                    #         out = torch.softmax(out, dim=1)
-                    #         aggregator.add_batch(out, locations)
-                    #     output_tensor = aggregator.get_output_tensor()
-                    #     gm_output_tensor = output_tensor[0, ...]
-                    #     save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
-                    #              os.path.join(FIG_PATH, 'grid_' + os.path.basename(inf_names)))
-                    # ponai attempt
-                    from ponai.inferers import sliding_window_inference
-                    for inf_sample in inference_set:
-                        for dropout_sample in range(dropout_samples):
-                            # Variables from sampler
-                            if not uncertainty_flag:
-                                inf_names = inf_sample['mri']['path']
-                                print(inf_names)
-                                if type(inf_names) == list:
-                                    sub = regex.findall(os.path.basename(inf_names[0]))[0]
-                                else:
-                                    sub = regex.findall(os.path.basename(inf_names))[0]
-                                print(f'The name and subject ID is: {inf_names} and {sub}')
-                                input_tensor = inf_sample['mri']['data'].squeeze().cuda()
-                                inf_physics = torch.FloatTensor([inf_sample['physics']]).squeeze().cuda().float()
-                                if len(inf_physics.shape) <= 4:
-                                    inf_physics = torch.unsqueeze(inf_physics, 0)
-                                # Manually do Z normalisation
-                                ip_mean = input_tensor.mean()
-                                ip_std = input_tensor.std()
-                                input_tensor -= ip_mean
-                                input_tensor /= ip_std
-                                overlap = 0.3
-                                if len(input_tensor.shape) <= 4:
-                                    input_tensor = torch.unsqueeze(input_tensor, 0)
-                                    if len(input_tensor.shape) == 4:
-                                        input_tensor = torch.unsqueeze(input_tensor, 0)
-                                if physics_flag:
-                                    # print(f'ponai: {input_tensor.shape}, {inf_physics.shape}')
-                                    inf_processed_physics = physics_preprocessing(inf_physics, physics_experiment_type)
-                                    val_outputs = sliding_window_inference(
-                                        (input_tensor, inf_processed_physics), 160, 1, model, overlap=overlap, mode='gaussian')
-                                else:
-                                    val_outputs = sliding_window_inference(
-                                        input_tensor, 160, 1, model, overlap=overlap, mode='gaussian')
-                                out = torch.squeeze(torch.softmax(val_outputs, dim=1))
-                                # print(f'Out shape is {out.shape}')
-                                gm_output_tensor = out[0, ...]
-                                if dropout_level == 0.0:
-                                    inf_path = os.path.join(FIG_PATH, f'inf_{sub}')
-                                    if not os.path.exists(inf_path):
-                                        os.makedirs(inf_path)
-                                    save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
-                                             os.path.join(inf_path,
-                                                          f'monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
-                                else:
-                                    inf_subdir = os.path.join(FIG_PATH, f'Inference{dropout_sample}')
-                                    if not os.path.exists(inf_subdir):
-                                        os.makedirs(inf_subdir)
-                                    save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
-                                             os.path.join(inf_subdir,
-                                                          f'monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
-                                                              inf_names)))
+                    for val_sample in val_loader:
+                        val_images = val_sample['mri']['data'].squeeze().cuda()
+                        val_names = val_sample['mri']['path']
+                        # Readjust dimensions to match expected shape for network
+                        # if len(val_images.shape) == 3:
+                        #     val_images = torch.unsqueeze(torch.unsqueeze(val_images, 0), 0)
+                        # elif len(val_images.shape) == 4:
+                        #     val_images = torch.unsqueeze(val_images, 0)
+                        val_labels = val_sample['seg']['data'].squeeze().cuda()
+                        # print(f'val_images shape is {val_images.shape}')
+                        # print(f'val_labels shape is {val_labels.shape}')
+                        # Readjust dimensions to match expected shape
+                        if len(val_labels.shape) == 4:
+                            val_labels = torch.unsqueeze(val_labels, 1)
+                        if len(val_images.shape) == 4:
+                            val_images = torch.unsqueeze(val_images, 1)
+                        val_physics = val_sample['physics'].squeeze().cuda().float()
+                        val_names = [os.path.basename(val_name) for val_name in val_names]
+
+                        new_names = []
+                        affine_array = np.array([[-1, 0, 0, 89],
+                                                 [0, 1, 0, -125],
+                                                 [0, 0, 1, -71],
+                                                 [0, 0, 0, 1]])
+                        for k in range(4):
+                            if physics_experiment_type == 'MPRAGE':
+                                new_names.append('val_' + val_names[k].rsplit('.nii.gz')[0]
+                                                 + f'_TI_{val_physics[k]:.5f}'
+                                                 + '.nii.gz')
+                            elif physics_experiment_type == 'SPGR':
+                                new_names.append('val_' + val_names[k].rsplit('.nii.gz')[0]
+                                                 + f'_TR_{val_physics[k, 0]:.5f}'
+                                                 + f'_TE_{val_physics[k, 1]:.5f}'
+                                                 + f'_FA_{val_physics[k, 2]:.2f}'
+                                                 + '.nii.gz')
+                            # save_img(val_images[k, ...].squeeze().detach().cpu().numpy(), affine_array,
+                            #          os.path.join(FIG_PATH, os.path.basename(new_names[k])))
+                        val_names = new_names
+
+                        # Small name check
+                        # print(f'Val names are {val_names}')
+
+                        # Pass images to the model
+                        if not uncertainty_flag:
+                            if physics_flag:
+                                # Calculate physics extensions
+                                val_processed_physics = physics_preprocessing(val_physics, physics_experiment_type)
+                                # print(f'The val physics are {val_names}, {val_physics}, {val_processed_physics}')
+                                out, features_out = model(val_images, val_processed_physics)
                             else:
-                                inf_names = inf_sample['mri']['path']
-                                if type(inf_names) == list:
-                                    sub = regex.findall(os.path.basename(inf_names[0]))[0]
-                                else:
-                                    sub = regex.findall(os.path.basename(inf_names))[0]
-                                print(f'The name and subject ID is: {inf_names} and {sub}')
-                                input_tensor = inf_sample['mri']['data'].squeeze().cuda()
-                                inf_physics = torch.FloatTensor([inf_sample['physics']]).squeeze().cuda().float()
-                                if len(inf_physics.shape) <= 4:
-                                    inf_physics = torch.unsqueeze(inf_physics, 0)
-                                # Manually do Z normalisation
-                                ip_mean = input_tensor.mean()
-                                ip_std = input_tensor.std()
-                                input_tensor -= ip_mean
-                                input_tensor /= ip_std
-                                overlap = 0.3
-                                if len(input_tensor.shape) <= 4:
-                                    input_tensor = torch.unsqueeze(input_tensor, 0)
-                                    if len(input_tensor.shape) == 4:
-                                        input_tensor = torch.unsqueeze(input_tensor, 0)
-                                if physics_flag:
-                                    print(f'ponai: {input_tensor.shape}, {inf_physics.shape}')
-                                    inf_processed_physics = physics_preprocessing(inf_physics, physics_experiment_type)
-                                    val_outputs, unc_val_outputs = sliding_window_inference(
-                                        (input_tensor, inf_processed_physics), 160, 1, model, overlap=overlap,
-                                        mode='gaussian',
-                                        uncertainty_flag=uncertainty_flag)
-                                else:
-                                    val_outputs, unc_val_outputs = sliding_window_inference(
-                                        input_tensor, 160, 1, model, overlap=overlap, mode='gaussian',
-                                        uncertainty_flag=uncertainty_flag)
-                                out = torch.squeeze(val_outputs)
-                                # GM + Background
-                                gm_output_tensor = out[0, ...]
-                                # gm_output_tensor2 = out[1, ...]
-                                unc_output_tensor = unc_val_outputs[0, 0, ...]
-                                # unc_output_tensor2 = unc_val_outputs[0, 1, ...]
-                                # Ensure N dimensions are at the end, not the start
-                                sigma_output = sigma_output.squeeze().permute(1, 2, 3, 0)
-                                if dropout_level == 0.0:
-                                    inf_path = os.path.join(FIG_PATH, f'inf_{sub}')
-                                    if not os.path.exists(inf_path):
-                                        os.makedirs(inf_path)
-                                    save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
-                                             os.path.join(inf_path,
-                                                          f'monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
-                                    save_img(np.squeeze(unc_output_tensor.cpu().numpy()), np.eye(4),
-                                             os.path.join(inf_path,
-                                                          f'unc_monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
-                                    save_img(np.squeeze(sigma_output.cpu().numpy()), np.eye(4),
-                                             os.path.join(inf_path, f'sigma_monai_grid_fold_{fold}_' + os.path.basename(
-                                                 inf_names)))
-                                else:
-                                    inf_subdir = os.path.join(FIG_PATH, f'Inference{dropout_sample}')
-                                    if not os.path.exists(inf_subdir):
-                                        os.makedirs(inf_subdir)
-                                    save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
-                                             os.path.join(inf_subdir,
-                                                          f'monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
-                                                              inf_names)))
-                                    save_img(np.squeeze(unc_output_tensor.cpu().numpy()), np.eye(4),
-                                             os.path.join(inf_subdir,
-                                                          f'unc_monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
-                                                              inf_names)))
-                                    save_img(np.squeeze(sigma_output.cpu().numpy()), np.eye(4),
-                                             os.path.join(inf_subdir,
-                                                          f'sigma_monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
-                                                              inf_names)))
-                                    # save_img(np.squeeze(gm_output_tensor2.cpu().numpy()), np.eye(4),
-                                    #          os.path.join(FIG_PATH,
-                                    #                       f'2monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
-                                    #                           inf_names)))
-                                    # save_img(np.squeeze(unc_output_tensor2.cpu().numpy()), np.eye(4),
-                                    #          os.path.join(FIG_PATH,
-                                    #                       f'2unc_monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
-                                    #                           inf_names)))
-                                # save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
-                                #          os.path.join(FIG_PATH, f'monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
-                                # save_img(np.squeeze(unc_output_tensor.cpu().numpy()), np.eye(4),
-                                #          os.path.join(FIG_PATH, f'unc_monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
-                        print(f'Running inference on: {os.path.basename(inf_names)}')
+                                out, features_out = model(val_images)
+                            val_data_loss = F.binary_cross_entropy_with_logits(out, val_labels, reduction="mean")
+                        else:
+                            if physics_flag:
+                                # Calculate physics extensions
+                                val_processed_physics = physics_preprocessing(val_physics, physics_experiment_type)
+                                # print(f'Processed physics shape is {processed_physics.shape}')
+                                out, unc_out, features_out = model(val_images, val_processed_physics)
+                            else:
+                                out, unc_out, features_out = model(val_images)
+                            val_data_loss, val_data_vol_std = corrected_paper_stochastic_loss(out, unc_out, val_labels,
+                                                                                              num_passes=num_loss_passes)
+
+                        # Loss depends on training mode
+                        if training_mode == 'standard':
+                            val_loss = val_data_loss
+                        elif training_mode == 'stratification' or training_mode == 'kld':
+                            val_total_feature_loss = 0.1 * dynamic_calc_feature_loss(
+                                features_out, tm=training_mode)  # NOTE: This needs to be the feature tensor!
+                            # regulatory_ratio = val_data_loss / val_total_feature_loss
+                            val_loss = val_data_loss + stratification_epsilon * val_total_feature_loss / (
+                                        1 + dynamic_stratification_checker(val_labels) * float(1e9)) ** 2
+
+                        # print(f"out val shape is {out.shape}")  # Checking for batch dimension inclusion or not
+                        out = torch.softmax(out, dim=1)
+                        gm_out = out[:, 0, ...]
+
+                        val_running_loss += val_loss.detach().item()
+
+                        # Metric calculation
+                        # print(pGM_dice)
+                        # dice_performance = val_metric.forward(out, val_labels)
+                        gm_volume = gm_out.view(4, -1).sum(1)
+                        names_collector += val_names
+                        gm_volumes_collector += gm_volume
+
+                        # Calculate CoVs
+                        gm_volume_np = gm_volume.cpu().detach().numpy()
+                        val_CoV = np.std(gm_volume_np) / np.mean(gm_volume_np)
+                        for i in range(val_batch_size):
+                            pGM_dice = soft_dice_score(val_labels[i, ...].cpu().detach().numpy(), out[i, ...].cpu().detach().numpy())
+                            metric_collector += [pGM_dice.tolist()]
+                            CoV_collector.append(val_CoV)
+                        # writer.add_scalar('Loss/Val_Feature_loss', val_total_feature_loss, running_iter)
+
+                        # Convert to numpy arrays
+                        val_images = val_images.cpu().detach().numpy()
+                        val_labels = val_labels.cpu().detach().numpy()
+                        val_images = normalise_image(val_images)
+                        out = out.cpu().detach().numpy()
+                        out = normalise_image(out)
+
+                        val_counter += val_batch_size  #Should probably be one to properly match training
+
+                        # Cleaning up
+                        # del val_sample, val_images, val_labels, val_physics, val_names
+
+                print(f'This validation step took {time.time() - val_start} s')
+                # Write to tensorboard
+                writer.add_scalar('Loss/val', val_running_loss / val_counter, running_iter)
+                writer.add_scalar('Loss/dice_val', np.mean(metric_collector), running_iter)
+                writer.add_scalar('Loss/CoV', np.mean(CoV_collector), running_iter)
+                writer.add_scalar('Loss/CoV2', np.mean(CoV_collector2), running_iter)
+                img2tensorboard.add_animated_gif(writer=writer, image_tensor=val_images[0, ...],
+                                                 tag=f'Validation/Images_Fold_{fold}', max_out=patch_size // 4,
+                                                 scale_factor=255, global_step=running_iter)
+                img2tensorboard.add_animated_gif(writer=writer, image_tensor=val_labels[0, 0, ...][None, ...],
+                                                 tag=f'Validation/Labels_Fold_{fold}', max_out=patch_size // 4,
+                                                 scale_factor=255, global_step=running_iter)
+                img2tensorboard.add_animated_gif(writer=writer, image_tensor=out[0, 0, ...][None, ...],
+                                                 tag=f'Validation/Output_Fold_{fold}', max_out=patch_size // 4,
+                                                 scale_factor=255, global_step=running_iter)
+                if uncertainty_flag:
+                    unc_out = unc_out.cpu().detach().numpy()
+                    unc_out = normalise_image(unc_out)
+                    img2tensorboard.add_animated_gif(writer=writer, image_tensor=unc_out[0, 0, ...][None, ...],
+                                                     tag=f'Validation/Unc_Output_Fold_{fold}', max_out=patch_size // 4,
+                                                     scale_factor=255, global_step=running_iter)
+
+                # Check if current val dice is better than previous best
+                # true_dice = np.mean(metric_collector)
+                # true_val = val_running_loss / val_counter  # alternative
+                # if true_dice > best_val_dice:
+                #     best_val_dice = true_dice
+                #     append_string = 'not_best'
+                #     best_counter = 0
+                # else:
+                #     append_string = 'nb'
+                #     best_counter += 1
+
+                # Aggregation
+                running_val_metric.append(np.mean(metric_collector))
+                running_val_names.append(names_collector)
+                running_gm_volumes.append(gm_volumes_collector)
+                running_gm_volumes2.append(gm_volumes_collector2)
+
+                # # Save model
+                # if SAVE and append_string == 'best':
+                #     MODEL_PATH = os.path.join(SAVE_PATH, f'model_epoch_{epoch}_fold_{fold}.pth')
+                #     print(MODEL_PATH)
+                #     torch.save({'model_state_dict': model.state_dict(),
+                #                 'optimizer_state_dict': optimizer.state_dict(),
+                #                 'epoch': epoch,
+                #                 'loss': loss,
+                #                 'running_iter': running_iter,
+                #                 'batch_size': batch_size,
+                #                 'patch_size': patch_size,
+                #                 'running_val_names': running_val_names,
+                #                 'running_val_metric': running_val_metric,
+                #                 'overall_val_names': overall_val_names,
+                #                 'overall_val_metric': overall_val_metric}, MODEL_PATH)
+
+                # Saving in-training csv
+                # print(f'The problematic names seem to be {running_val_names[-1]}')
+                current_subject_ids = [int(vn.rsplit('.nii.gz')[0].split('_')[4]) for vn in running_val_names[-1]]
+                print(len(running_val_names[-1]),  # running_val_names,
+                      len(current_subject_ids),  # current_subject_ids,
+                      len(metric_collector),  # metric_collector,
+                      len(CoV_collector),  # CoV_collector,
+                      len(running_gm_volumes[-1]),
+                      len(running_gm_volumes2[-1]))
+                sub = pd.DataFrame({"Filename": running_val_names[-1],  # Done
+                                    "subject_id": current_subject_ids,  # Done
+                                    "Dice": metric_collector,
+                                    "CoV": CoV_collector,
+                                    "GM_volumes": running_gm_volumes[-1],
+                                    'GM_volumes2': running_gm_volumes[-1]})
+
+                sub.to_csv(os.path.join(SAVE_PATH, f'val_epoch_{epoch}_fold_{fold}.csv'), index=False)
+
+                # Saving the model
+                # Save model
+                if SAVE:
+                    MODEL_PATH = os.path.join(SAVE_PATH, f'model_epoch_{epoch}_fold_{fold}.pth')
+                    print(MODEL_PATH)
+                    torch.save({'model_state_dict': model.state_dict(),
+                                'optimizer_state_dict': optimizer.state_dict(),
+                                'epoch': epoch,
+                                'loss': loss,
+                                'running_iter': running_iter,
+                                'batch_size': batch_size,
+                                'patch_size': patch_size,
+                                'running_val_names': running_val_names,
+                                'running_val_metric': running_val_metric,
+                                'running_gm_volumes': running_gm_volumes,
+                                'running_gm_volumes2': running_gm_volumes2,
+                                'overall_gm_volumes': overall_gm_volumes,
+                                'overall_gm_volumes2': overall_gm_volumes2,
+                                'overall_val_names': overall_val_names,
+                                'overall_val_metric': overall_val_metric}, MODEL_PATH)
+
+                # Early stopping
+                early_stopping((np.mean(metric_collector)-val_batch_size*np.mean(CoV_collector)), model)
+
+                if early_stopping.early_stop or epoch == EPOCHS - 1:
+                    # Set overalls to best epoch
+                    best_epoch = int(np.argmax(running_val_metric))
+                    print(f'The best epoch is Epoch {best_epoch}')
+                    overall_val_metric.append(running_val_metric[best_epoch])
+                    overall_val_names.extend(running_val_names[best_epoch])
+                    overall_gm_volumes.extend(running_gm_volumes[best_epoch])
+                    overall_gm_volumes2.extend(running_gm_volumes2[best_epoch])
+
+                    if not os.path.exists(os.path.join(SAVE_PATH, f"Best_epoch_{best_epoch}")):
+                        os.makedirs(os.path.join(SAVE_PATH, f"Best_epoch_{best_epoch}"))
+
+                    # # Save best model
+                    # BEST_MODEL_PATH = os.path.join(SAVE_PATH, f'best_model_epoch_{best_epoch}_fold_{fold}.pth')
+                    # # Need to re-evaluate this: Not actually saving state of model at best point, only latest point!
+                    # torch.save({'model_state_dict': model.state_dict(),
+                    #             'optimizer_state_dict': optimizer.state_dict(),
+                    #             'epoch': best_epoch,
+                    #             'loss': loss,
+                    #             'running_iter': running_iter,
+                    #             'batch_size': batch_size,
+                    #             'patch_size': patch_size,
+                    #             'running_val_names': running_val_names,
+                    #             'running_val_metric': running_val_metric,
+                    #             'running_gm_volumes': running_gm_volumes,
+                    #             'running_gm_volumes2': running_gm_volumes2,
+                    #             'overall_gm_volumes': overall_gm_volumes,
+                    #             'overall_gm_volumes2': overall_gm_volumes2,
+                    #             'overall_val_names': overall_val_names,
+                    #             'overall_val_metric': overall_val_metric}, BEST_MODEL_PATH)
+                    print('Early stopping!')
                     break
+                del val_sample, val_images, val_labels, val_physics, val_names, out, features_out
+                if uncertainty_flag:
+                    del unc_out
 
-        # Now that this fold's training has ended, want starting points of next fold to reset
-        latest_epoch = 0
-        latest_fold = 0
-        running_iter = 0
-        loaded_epoch = 0
+            else:
+                # Aggregation: Fill with some values so can actually match to best epoch
+                running_val_metric.append(-1e10)
+                running_val_names.append(-1e10)
+                running_gm_volumes.append(-1e10)
+                running_gm_volumes2.append(-1e10)
+        elif training_mode == 'inference':
+            # model.eval()
+            with torch.no_grad():
+                if dropout_level == 0.0:
+                    dropout_samples = 1
+                else:
+                    dropout_samples = 20
+                # for inf_sample in inference_set:
+                #     # Figure out inference, together
+                #     inf_names = inf_sample['mri']['path']
+                #     inf_physics = torch.FloatTensor([inf_sample['physics']]).squeeze().cuda().float()
+                #     if len(inf_physics.shape) <= 4:
+                #         inf_physics = torch.unsqueeze(inf_physics, 0)
+                #     grid_sampler = porchio.inference.GridSampler(
+                #         sample=inf_sample,
+                #         patch_size=patch_size,
+                #         patch_overlap=0,
+                #         padding_mode=None,)
+                #     patch_loader = torch.utils.data.DataLoader(grid_sampler, batch_size=1)
+                #     aggregator = porchio.inference.GridAggregator(grid_sampler)
+                #     for patches_batch in patch_loader:
+                #         # Variables from sampler
+                #         input_tensor = patches_batch['mri']['data'].squeeze().cuda()
+                #         # Manually do Z normalisation
+                #         ip_mean = input_tensor.mean()
+                #         ip_std = input_tensor.std()
+                #         input_tensor -= ip_mean
+                #         input_tensor /= ip_std
+                #         if len(input_tensor.shape) <= 4:
+                #             input_tensor = torch.unsqueeze(input_tensor, 0)
+                #             if len(input_tensor.shape) == 4:
+                #                 input_tensor = torch.unsqueeze(input_tensor, 0)
+                #         locations = patches_batch[porchio.LOCATION]
+                #         if physics_flag:
+                #             # Calculate physics extensions
+                #             inf_processed_physics = physics_preprocessing(inf_physics, physics_experiment_type)
+                #             print(f'porchio: {input_tensor.shape}, {inf_processed_physics.shape}')
+                #             out, _ = model(input_tensor, inf_processed_physics)
+                #         else:
+                #             out, _ = model(input_tensor)
+                #         out = torch.softmax(out, dim=1)
+                #         aggregator.add_batch(out, locations)
+                #     output_tensor = aggregator.get_output_tensor()
+                #     gm_output_tensor = output_tensor[0, ...]
+                #     save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
+                #              os.path.join(FIG_PATH, 'grid_' + os.path.basename(inf_names)))
+                # ponai attempt
+                from ponai.inferers import sliding_window_inference
+                for inf_sample in inference_set:
+                    for dropout_sample in range(dropout_samples):
+                        # Variables from sampler
+                        if not uncertainty_flag:
+                            inf_names = inf_sample['mri']['path']
+                            print(inf_names)
+                            if type(inf_names) == list:
+                                sub = regex.findall(os.path.basename(inf_names[0]))[0]
+                            else:
+                                sub = regex.findall(os.path.basename(inf_names))[0]
+                            print(f'The name and subject ID is: {inf_names} and {sub}')
+                            input_tensor = inf_sample['mri']['data'].squeeze().cuda()
+                            inf_physics = torch.FloatTensor([inf_sample['physics']]).squeeze().cuda().float()
+                            if len(inf_physics.shape) <= 4:
+                                inf_physics = torch.unsqueeze(inf_physics, 0)
+                            # Manually do Z normalisation
+                            ip_mean = input_tensor.mean()
+                            ip_std = input_tensor.std()
+                            input_tensor -= ip_mean
+                            input_tensor /= ip_std
+                            overlap = 0.3
+                            if len(input_tensor.shape) <= 4:
+                                input_tensor = torch.unsqueeze(input_tensor, 0)
+                                if len(input_tensor.shape) == 4:
+                                    input_tensor = torch.unsqueeze(input_tensor, 0)
+                            if physics_flag:
+                                # print(f'ponai: {input_tensor.shape}, {inf_physics.shape}')
+                                inf_processed_physics = physics_preprocessing(inf_physics, physics_experiment_type)
+                                val_outputs = sliding_window_inference(
+                                    (input_tensor, inf_processed_physics), 160, 1, model, overlap=overlap, mode='gaussian')
+                            else:
+                                val_outputs = sliding_window_inference(
+                                    input_tensor, 160, 1, model, overlap=overlap, mode='gaussian')
+                            out = torch.squeeze(torch.softmax(val_outputs, dim=1))
+                            # print(f'Out shape is {out.shape}')
+                            gm_output_tensor = out[0, ...]
+                            if dropout_level == 0.0:
+                                inf_path = os.path.join(FIG_PATH, f'inf_{sub}')
+                                if not os.path.exists(inf_path):
+                                    os.makedirs(inf_path)
+                                save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
+                                         os.path.join(inf_path,
+                                                      f'monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
+                            else:
+                                inf_subdir = os.path.join(FIG_PATH, f'Inference{dropout_sample}')
+                                if not os.path.exists(inf_subdir):
+                                    os.makedirs(inf_subdir)
+                                save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
+                                         os.path.join(inf_subdir,
+                                                      f'monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
+                                                          inf_names)))
+                        else:
+                            inf_names = inf_sample['mri']['path']
+                            if type(inf_names) == list:
+                                sub = regex.findall(os.path.basename(inf_names[0]))[0]
+                            else:
+                                sub = regex.findall(os.path.basename(inf_names))[0]
+                            print(f'The name and subject ID is: {inf_names} and {sub}')
+                            input_tensor = inf_sample['mri']['data'].squeeze().cuda()
+                            inf_physics = torch.FloatTensor([inf_sample['physics']]).squeeze().cuda().float()
+                            if len(inf_physics.shape) <= 4:
+                                inf_physics = torch.unsqueeze(inf_physics, 0)
+                            # Manually do Z normalisation
+                            ip_mean = input_tensor.mean()
+                            ip_std = input_tensor.std()
+                            input_tensor -= ip_mean
+                            input_tensor /= ip_std
+                            overlap = 0.3
+                            if len(input_tensor.shape) <= 4:
+                                input_tensor = torch.unsqueeze(input_tensor, 0)
+                                if len(input_tensor.shape) == 4:
+                                    input_tensor = torch.unsqueeze(input_tensor, 0)
+                            if physics_flag:
+                                print(f'ponai: {input_tensor.shape}, {inf_physics.shape}')
+                                inf_processed_physics = physics_preprocessing(inf_physics, physics_experiment_type)
+                                val_outputs, unc_val_outputs = sliding_window_inference(
+                                    (input_tensor, inf_processed_physics), 160, 1, model, overlap=overlap,
+                                    mode='gaussian',
+                                    uncertainty_flag=uncertainty_flag)
+                            else:
+                                val_outputs, unc_val_outputs = sliding_window_inference(
+                                    input_tensor, 160, 1, model, overlap=overlap, mode='gaussian',
+                                    uncertainty_flag=uncertainty_flag)
+                            out = torch.squeeze(val_outputs)
+                            # GM + Background
+                            gm_output_tensor = out[0, ...]
+                            # gm_output_tensor2 = out[1, ...]
+                            unc_output_tensor = unc_val_outputs[0, 0, ...]
+                            # unc_output_tensor2 = unc_val_outputs[0, 1, ...]
+                            # Ensure N dimensions are at the end, not the start
+                            sigma_output = sigma_output.squeeze().permute(1, 2, 3, 0)
+                            if dropout_level == 0.0:
+                                inf_path = os.path.join(FIG_PATH, f'inf_{sub}')
+                                if not os.path.exists(inf_path):
+                                    os.makedirs(inf_path)
+                                save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
+                                         os.path.join(inf_path,
+                                                      f'monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
+                                save_img(np.squeeze(unc_output_tensor.cpu().numpy()), np.eye(4),
+                                         os.path.join(inf_path,
+                                                      f'unc_monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
+                                save_img(np.squeeze(sigma_output.cpu().numpy()), np.eye(4),
+                                         os.path.join(inf_path, f'sigma_monai_grid_fold_{fold}_' + os.path.basename(
+                                             inf_names)))
+                            else:
+                                inf_subdir = os.path.join(FIG_PATH, f'Inference{dropout_sample}')
+                                if not os.path.exists(inf_subdir):
+                                    os.makedirs(inf_subdir)
+                                save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
+                                         os.path.join(inf_subdir,
+                                                      f'monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
+                                                          inf_names)))
+                                save_img(np.squeeze(unc_output_tensor.cpu().numpy()), np.eye(4),
+                                         os.path.join(inf_subdir,
+                                                      f'unc_monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
+                                                          inf_names)))
+                                save_img(np.squeeze(sigma_output.cpu().numpy()), np.eye(4),
+                                         os.path.join(inf_subdir,
+                                                      f'sigma_monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
+                                                          inf_names)))
+                                # save_img(np.squeeze(gm_output_tensor2.cpu().numpy()), np.eye(4),
+                                #          os.path.join(FIG_PATH,
+                                #                       f'2monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
+                                #                           inf_names)))
+                                # save_img(np.squeeze(unc_output_tensor2.cpu().numpy()), np.eye(4),
+                                #          os.path.join(FIG_PATH,
+                                #                       f'2unc_monai_grid_fold_{fold}_DO_{dropout_sample}_' + os.path.basename(
+                                #                           inf_names)))
+                            # save_img(np.squeeze(gm_output_tensor.cpu().numpy()), np.eye(4),
+                            #          os.path.join(FIG_PATH, f'monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
+                            # save_img(np.squeeze(unc_output_tensor.cpu().numpy()), np.eye(4),
+                            #          os.path.join(FIG_PATH, f'unc_monai_grid_fold_{fold}_' + os.path.basename(inf_names)))
+                    print(f'Running inference on: {os.path.basename(inf_names)}')
+                break
 
-        # Model deletion and cache clearing to prevent polluting
-        del model
-        torch.cuda.empty_cache()
+    # Now that this fold's training has ended, want starting points of next fold to reset
+    latest_epoch = 0
+    latest_fold = 0
+    running_iter = 0
+    loaded_epoch = 0
 
-        if training_mode == 'inference':
-            loop_switch = False
+    # Model deletion and cache clearing to prevent polluting
+    del model
+    torch.cuda.empty_cache()
+
+    # if fold == 'inference':
+    #     loop_switch = False
 
 ## Totals: What to collect after training has finished
 # Dice for all validation? Volumes and COVs?

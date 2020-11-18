@@ -1065,7 +1065,7 @@ else:
     latest_epoch = -1
     latest_fold = 0
 
-print('\nStarting training!')
+print(f'\nStarted {training_mode}-ing!')
 for fold in range(latest_fold, num_folds):
     print('\nFOLD', fold)
     # Pre-loading sequence
@@ -1171,39 +1171,43 @@ for fold in range(latest_fold, num_folds):
     print(f'The length of the inference is {len(inf_df)}')
 
     model.cuda()
-    print('\nStarting training!')
+    print(f'\nStarted {training_mode}-ing!')
+    if training_mode == 'inference':
+        # Quick fix to get around inference running EPOCHS - loaded_epoch number of times!
+        # Ensure only one loop's worth of inferences are run, as desired
+        loaded_epoch = EPOCHS - 1
     for epoch in range(loaded_epoch, EPOCHS):
-        print(f'Training Epoch: {epoch}')
-        running_loss = 0.0
-        model.train()
-        train_acc = 0
-        total_dice = 0
-        new_seed = np.random.randint(10000)
-
-        # Shuffle training and validation:
-        new_train_df = reshuffle_csv(og_csv=train_df, batch_size=batch_size)
-        new_val_df = reshuffle_csv(og_csv=val_df, batch_size=batch_size)
-
-        # Val test
-        if val_test:
-            new_train_df = new_train_df[:20]
-
-        # And generate new loaders
-        patches_training_set = BespokeDataset(new_train_df, training_transform, patch_size, batch_seed=new_seed,
-                                              queue_length=batch_size)
-        train_loader = DataLoader(patches_training_set, batch_size=batch_size, shuffle=False, pin_memory=True)
-        patches_validation_set = BespokeDataset(new_val_df, validation_transform, patch_size, batch_seed=new_seed,
-                                                queue_length=val_batch_size)
-        val_loader = DataLoader(patches_validation_set, batch_size=val_batch_size, shuffle=False)
-
-        # Early stopping
-        best_val_dice = 0.0
-        best_counter = 0.0
-
-        # Patch test
-        if patch_test and epoch == 0 and fold == 0:
-            visualise_batch_patches(loader=train_loader, bs=batch_size, ps=patch_size, comparisons=4)
         if training_mode != 'inference':
+            print(f'Training Epoch: {epoch}')
+            running_loss = 0.0
+            model.train()
+            train_acc = 0
+            total_dice = 0
+            new_seed = np.random.randint(10000)
+
+            # Shuffle training and validation:
+            new_train_df = reshuffle_csv(og_csv=train_df, batch_size=batch_size)
+            new_val_df = reshuffle_csv(og_csv=val_df, batch_size=batch_size)
+
+            # Val test
+            if val_test:
+                new_train_df = new_train_df[:20]
+
+            # And generate new loaders
+            patches_training_set = BespokeDataset(new_train_df, training_transform, patch_size, batch_seed=new_seed,
+                                                  queue_length=batch_size)
+            train_loader = DataLoader(patches_training_set, batch_size=batch_size, shuffle=False, pin_memory=True)
+            patches_validation_set = BespokeDataset(new_val_df, validation_transform, patch_size, batch_seed=new_seed,
+                                                    queue_length=val_batch_size)
+            val_loader = DataLoader(patches_validation_set, batch_size=val_batch_size, shuffle=False)
+
+            # Early stopping
+            best_val_dice = 0.0
+            best_counter = 0.0
+
+            # Patch test
+            if patch_test and epoch == 0 and fold == 0:
+                visualise_batch_patches(loader=train_loader, bs=batch_size, ps=patch_size, comparisons=4)
             for i, sample in enumerate(train_loader):
                 if i != 0:
                     print(f'The time between iterations was {time.time() - start}')
@@ -1530,7 +1534,7 @@ for fold in range(latest_fold, num_folds):
                 # Early stopping
                 early_stopping((np.mean(metric_collector)-val_batch_size*np.mean(CoV_collector)), model)
 
-                if early_stopping.early_stop or epoch == 60:
+                if early_stopping.early_stop or epoch == EPOCHS - 1:
                     # Set overalls to best epoch
                     best_epoch = int(np.argmax(running_val_metric))
                     print(f'The best epoch is Epoch {best_epoch}')
@@ -1539,9 +1543,8 @@ for fold in range(latest_fold, num_folds):
                     overall_gm_volumes.extend(running_gm_volumes[best_epoch])
                     overall_gm_volumes2.extend(running_gm_volumes2[best_epoch])
 
-                    # f = open(f"Best_epoch_{best_epoch}.txt", "w")
-                    # f.write(" Created file")
-                    # f.close()
+                    if not os.path.exists(os.path.join(SAVE_PATH, f"Best_epoch_{best_epoch}")):
+                        os.makedirs(os.path.join(SAVE_PATH, f"Best_epoch_{best_epoch}"))
 
                     # # Save best model
                     # BEST_MODEL_PATH = os.path.join(SAVE_PATH, f'best_model_epoch_{best_epoch}_fold_{fold}.pth')
@@ -1587,7 +1590,7 @@ for fold in range(latest_fold, num_folds):
                 if dropout_level == 0.0:
                     dropout_samples = 1
                 else:
-                    dropout_samples = 100
+                    dropout_samples = 20
                 for inf_sample in inference_set:
                     # Variables from sampler
                     for dropout_sample in range(dropout_samples):
@@ -1710,8 +1713,8 @@ for fold in range(latest_fold, num_folds):
     del model
     torch.cuda.empty_cache()
 
-    if training_mode == 'inference':
-        break
+    # if training_mode == 'inference':
+    #     break
 
 ## Totals: What to collect after training has finished
 # Dice for all validation? Volumes and COVs?

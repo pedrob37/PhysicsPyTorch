@@ -1010,7 +1010,7 @@ else:
     latest_epoch = -1
     latest_fold = 0
 
-print('\nStarting training!')
+print(f'\nStarted {training_mode}-ing!')
 for fold in range(latest_fold, num_folds):
     print('\nFOLD', fold)
     # Pre-loading sequence
@@ -1114,7 +1114,7 @@ for fold in range(latest_fold, num_folds):
     print(f'The length of the inference is {len(inf_df)}')
 
     model.cuda()
-    print('\nStarting training!')
+    print(f'\nStarted {training_mode}-ing!')
     for epoch in range(loaded_epoch, EPOCHS):
         print(f'Training Epoch: {epoch}')
         running_loss = 0.0

@@ -13,6 +13,7 @@ class RandomSPGR(RandomTransform):
             TE: Union[float, Tuple[float, float]] = (0.005, 0.1),
             FA: Union[float, Tuple[float, float]] = (5.0, 90.0),
             p: float = 1,
+            batch_generation: Optional[int] = None,
             seed: Optional[int] = None,
             keys: Optional[List[str]] = None,
             ):
@@ -26,6 +27,7 @@ class RandomSPGR(RandomTransform):
         self.coefficients_range_FA = self.parse_range(
             FA, 'FA_range')
         self.FA = FA
+        self.batch_generation = batch_generation
 
     def apply_transform(self, sample: Subject) -> dict:
         random_parameters_images_dict = {}
@@ -33,26 +35,50 @@ class RandomSPGR(RandomTransform):
         TE_list = []
         FA_list = []
         eps = 1e-6
-        for image_name, image_dict in sample.get_images_dict().items():
-            TR = torch.FloatTensor(1).uniform_(*self.TR)
-            TE = torch.FloatTensor(1).uniform_(self.TE[0], min(TR.numpy()[0], self.TE[1]))
-            FA = torch.FloatTensor(1).uniform_(*self.FA)
-            random_parameters_dict = {'TR': TR,
-                                      'TE': TE,
-                                      'FA': FA}
-            random_parameters_images_dict[image_name] = random_parameters_dict
-            image_dict[DATA] = self.generate_spgr(T1=image_dict[DATA][0, ...]+eps,
-                                                  T2s=image_dict[DATA][1, ...]+eps,
-                                                  PD=image_dict[DATA][2, ...]+eps,
-                                                  TR=TR, TE=TE, FA=FA)
-            # raise RuntimeWarning(f'The spatial shape is {image_dict[DATA].shape}')
-            TR_list.append(TR[0])
-            TE_list.append(TE[0])
-            FA_list.append(FA[0])
-        sample['physics'] = torch.stack([torch.FloatTensor(TR_list),
-                                         torch.FloatTensor(TE_list),
-                                         torch.FloatTensor(FA_list)], dim=1)
-        sample.add_transform(self, random_parameters_images_dict)
+        if not self.batch_generation:
+            for image_name, image_dict in sample.get_images_dict().items():
+                TR = torch.FloatTensor(1).uniform_(*self.TR)
+                TE = torch.FloatTensor(1).uniform_(self.TE[0], min(TR.numpy()[0], self.TE[1]))
+                FA = torch.FloatTensor(1).uniform_(*self.FA)
+                random_parameters_dict = {'TR': TR,
+                                          'TE': TE,
+                                          'FA': FA}
+                random_parameters_images_dict[image_name] = random_parameters_dict
+                image_dict[DATA] = self.generate_spgr(T1=image_dict[DATA][0, ...]+eps,
+                                                      T2s=image_dict[DATA][1, ...]+eps,
+                                                      PD=image_dict[DATA][2, ...]+eps,
+                                                      TR=TR, TE=TE, FA=FA)
+                # raise RuntimeWarning(f'The spatial shape is {image_dict[DATA].shape}')
+                TR_list.append(TR[0])
+                TE_list.append(TE[0])
+                FA_list.append(FA[0])
+            sample['physics'] = torch.stack([torch.FloatTensor(TR_list),
+                                             torch.FloatTensor(TE_list),
+                                             torch.FloatTensor(FA_list)], dim=1)
+            sample.add_transform(self, random_parameters_images_dict)
+        else:
+            for image_name, image_dict in sample.get_images_dict().items():
+                batch_vols = torch.zeros((self.batch_generation,) + image_dict[DATA].shape[1:])
+                for generation in range(self.batch_generation):
+                    TR = torch.FloatTensor(1).uniform_(*self.TR)
+                    TE = torch.FloatTensor(1).uniform_(self.TE[0], min(TR.numpy()[0], self.TE[1]))
+                    FA = torch.FloatTensor(1).uniform_(*self.FA)
+                    random_parameters_dict = {'TR': TR,
+                                              'TE': TE,
+                                              'FA': FA}
+                    batch_vols[generation, ...] = self.generate_spgr(T1=image_dict[DATA][0, ...]+eps,
+                                                                     T2s=image_dict[DATA][1, ...]+eps,
+                                                                     PD=image_dict[DATA][2, ...]+eps,
+                                                                     TR=TR, TE=TE, FA=FA)
+                    TR_list.append(TR[0])
+                    TE_list.append(TE[0])
+                    FA_list.append(FA[0])
+                random_parameters_images_dict[image_name] = random_parameters_dict
+                sample['physics'] = torch.stack([torch.FloatTensor(TR_list),
+                                             torch.FloatTensor(TE_list),
+                                             torch.FloatTensor(FA_list)], dim=1)
+                sample.add_transform(self, random_parameters_images_dict)
+            image_dict[DATA] = batch_vols  # [:, None, ...]
         return sample
 
     @staticmethod

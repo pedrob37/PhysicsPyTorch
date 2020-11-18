@@ -29,444 +29,6 @@ sys.path.append('/nfs/home/pedro/RangerLARS/over9000')
 os.chdir('/nfs/home/pedro/PhysicsPyTorch')
 import porchio
 from early_stopping import pytorchtools
-import runai.hpo
-
-strategy = runai.hpo.Strategy.GridSearch
-runai.hpo.init('/nfs/home/pedro/', 'stratification')
-
-# import yaml
-# print(f'The pyyaml version is {yaml.__version__}')
-
-class PairwiseMeasures(object):
-    def __init__(self, seg_img, ref_img,
-                 measures=None, num_neighbors=8, pixdim=(1, 1, 1),
-                 empty=False, list_labels=None):
-
-        self.m_dict = {
-            'ref volume': (self.n_pos_ref, 'Volume (Ref)'),
-            'seg volume': (self.n_pos_seg, 'Volume (Seg)'),
-            'ref bg volume': (self.n_neg_ref, 'Volume (Ref bg)'),
-            'seg bg volume': (self.n_neg_seg, 'Volume (Seg bg)'),
-            'list_labels': (self.list_labels, 'List Labels Seg'),
-            'fp': (self.fp, 'FP'),
-            'fn': (self.fn, 'FN'),
-            'tp': (self.tp, 'TP'),
-            'tn': (self.tn, 'TN'),
-            'n_intersection': (self.n_intersection, 'Intersection'),
-            'n_union': (self.n_union, 'Union'),
-            'sensitivity': (self.sensitivity, 'Sens'),
-            'specificity': (self.specificity, 'Spec'),
-            'accuracy': (self.accuracy, 'Acc'),
-            'fpr': (self.false_positive_rate, 'FPR'),
-            'ppv': (self.positive_predictive_values, 'PPV'),
-            'npv': (self.negative_predictive_values, 'NPV'),
-            'dice': (self.dice_score, 'Dice'),
-            'IoU': (self.intersection_over_union, 'IoU'),
-            'jaccard': (self.jaccard, 'Jaccard'),
-            'informedness': (self.informedness, 'Informedness'),
-            'markedness': (self.markedness, 'Markedness'),
-            'vol_diff': (self.vol_diff, 'VolDiff'),
-            'ave_dist': (self.measured_average_distance, 'AveDist'),
-            'haus_dist': (self.measured_hausdorff_distance, 'HausDist'),
-            'connected_elements': (self.connected_elements, 'TPc,FPc,FNc'),
-            'outline_error': (self.outline_error, 'OER,OEFP,OEFN'),
-            'detection_error': (self.detection_error, 'DE,DEFP,DEFN')
-        }
-        self.seg = seg_img
-        self.ref = ref_img
-        self.list_labels = list_labels
-        self.flag_empty = empty
-        self.measures = measures if measures is not None else self.m_dict
-        self.neigh = num_neighbors
-        self.pixdim = pixdim
-
-    def check_binary(self):
-        """
-        Checks whether self.seg and self.ref are binary. This is to enable
-        measurements such as 'false positives', which only have meaning in
-        the binary case (what is positive/negative for multiple class?)
-        """
-
-        is_seg_binary, is_ref_binary = [((x > 0.5) == x).all()
-                                        for x in [self.seg, self.ref]]
-        # if (not is_ref_binary) or (not is_seg_binary):
-        #     raise ValueError("The input segmentation/reference images"
-        #                      " must be binary for this function.")
-
-    def __FPmap(self):
-        """
-        This function calculates the false positive map from binary
-        segmentation and reference maps
-
-        :return: FP map
-        """
-        self.check_binary()
-        return np.asarray((self.seg - self.ref) > 0.0, dtype=np.float32)
-
-    def __FNmap(self):
-        """
-        This function calculates the false negative map
-
-        :return: FN map
-        """
-        self.check_binary()
-        return np.asarray((self.ref - self.seg) > 0.0, dtype=np.float32)
-
-    def __TPmap(self):
-        """
-        This function calculates the true positive map (i.e. how many
-        reference voxels are positive)
-
-        :return: TP map
-        """
-        self.check_binary()
-        return np.logical_and(self.ref > 0.5, self.seg > 0.5).astype(float)
-
-    def __TNmap(self):
-        """
-        This function calculates the true negative map
-
-        :return: TN map
-        """
-        self.check_binary()
-        return np.logical_and(self.ref < 0.5, self.seg < 0.5).astype(float)
-
-    def __union_map(self):
-        """
-        This function calculates the union map between segmentation and
-        reference image
-
-        :return: union map
-        """
-        self.check_binary()
-        return np.logical_or(self.ref, self.seg).astype(float)
-
-    def __intersection_map(self):
-        """
-        This function calculates the intersection between segmentation and
-        reference image
-
-        :return: intersection map
-        """
-        self.check_binary()
-        return np.multiply(self.ref, self.seg)
-
-    def n_pos_ref(self):
-        return np.sum(self.ref)
-
-    def n_neg_ref(self):
-        self.check_binary()
-        return np.sum(self.ref == 0)
-
-    def n_pos_seg(self):
-        return np.sum(self.seg)
-
-    def n_neg_seg(self):
-        return np.sum(1 - self.seg)
-
-    def fp(self):
-        return np.sum(self.__FPmap())
-
-    def fn(self):
-        return np.sum(self.__FNmap())
-
-    def tp(self):
-        return np.sum(self.__TPmap())
-
-    def tn(self):
-        return np.sum(self.__TNmap())
-
-    def n_intersection(self):
-        return np.sum(self.__intersection_map())
-
-    def n_union(self):
-        return np.sum(self.__union_map())
-
-    def sensitivity(self):
-        return self.tp() / self.n_pos_ref()
-
-    def specificity(self):
-        return self.tn() / self.n_neg_ref()
-
-    def accuracy(self):
-        return (self.tn() + self.tp()) / \
-               (self.tn() + self.tp() + self.fn() + self.fp())
-
-    def false_positive_rate(self):
-        return self.fp() / self.n_neg_ref()
-
-    def positive_predictive_values(self):
-        if self.flag_empty:
-            return -1
-        return self.tp() / (self.tp() + self.fp())
-
-    def negative_predictive_values(self):
-        """
-        This function calculates the negative predictive value ratio between
-        the number of true negatives and the total number of negative elements
-
-        :return:
-        """
-        return self.tn() / (self.fn() + self.tn())
-
-    def dice_score(self):
-        """
-        This function returns the dice score coefficient between a reference
-        and segmentation images
-
-        :return: dice score
-        """
-        return 2 * self.tp() / np.sum(self.ref + self.seg)
-
-    def intersection_over_union(self):
-        """
-        This function the intersection over union ratio - Definition of
-        jaccard coefficient
-
-        :return:
-        """
-        return self.n_intersection() / self.n_union()
-
-    def jaccard(self):
-        """
-        This function returns the jaccard coefficient (defined as
-        intersection over union)
-
-        :return: jaccard coefficient
-        """
-        return self.intersection_over_union()
-
-    def informedness(self):
-        """
-        This function calculates the informedness between the segmentation
-        and the reference
-
-        :return: informedness
-        """
-        return self.sensitivity() + self.specificity() - 1
-
-    def markedness(self):
-        """
-        This functions calculates the markedness
-        :return:
-        """
-        return self.positive_predictive_values() + \
-               self.negative_predictive_values() - 1
-
-    def list_labels(self):
-        if self.list_labels is None:
-            return ()
-        return tuple(np.unique(self.list_labels))
-
-    def vol_diff(self):
-        """
-        This function calculates the ratio of difference in volume between
-        the reference and segmentation images.
-
-        :return: vol_diff
-        """
-        return np.abs(self.n_pos_ref() - self.n_pos_seg()) / self.n_pos_ref()
-
-    # @CacheFunctionOutput
-    # def _boundaries_dist_mat(self):
-    #     dist = DistanceMetric.get_metric('euclidean')
-    #     border_ref = MorphologyOps(self.ref, self.neigh).border_map()
-    #     border_seg = MorphologyOps(self.seg, self.neigh).border_map()
-    #     coord_ref = np.multiply(np.argwhere(border_ref > 0), self.pixdim)
-    #     coord_seg = np.multiply(np.argwhere(border_seg > 0), self.pixdim)
-    #     pairwise_dist = dist.pairwise(coord_ref, coord_seg)
-    #     return pairwise_dist
-
-    def measured_distance(self):
-        """
-        This functions calculates the average symmetric distance and the
-        hausdorff distance between a segmentation and a reference image
-
-        :return: hausdorff distance and average symmetric distance
-        """
-        ref_border_dist, seg_border_dist, ref_border, \
-            seg_border = self.border_distance()
-        average_distance = (np.sum(ref_border_dist) + np.sum(
-            seg_border_dist)) / (np.sum(self.ref + self.seg))
-        hausdorff_distance = np.max(
-            [np.max(ref_border_dist), np.max(seg_border_dist)])
-        return hausdorff_distance, average_distance
-
-    def measured_average_distance(self):
-        """
-        This function returns only the average distance when calculating the
-        distances between segmentation and reference
-
-        :return:
-        """
-        return self.measured_distance()[1]
-
-    def measured_hausdorff_distance(self):
-        """
-        This function returns only the hausdorff distance when calculated the
-        distances between segmentation and reference
-
-        :return:
-        """
-        return self.measured_distance()[0]
-
-    # def average_distance(self):
-    #     pairwise_dist = self._boundaries_dist_mat()
-    #     return (np.sum(np.min(pairwise_dist, 0)) + \
-    #             np.sum(np.min(pairwise_dist, 1))) / \
-    #            (np.sum(self.ref + self.seg))
-    #
-    # def hausdorff_distance(self):
-    #     pairwise_dist = self._boundaries_dist_mat()
-    #     return np.max((np.max(np.min(pairwise_dist, 0)),
-    #                    np.max(np.min(pairwise_dist, 1))))
-
-    def connected_elements(self):
-        """
-        This function returns the number of FP FN and TP in terms of
-        connected components.
-
-        :return: Number of true positive connected components, Number of
-            false positives connected components, Number of false negatives
-            connected components
-        """
-        blobs_ref, blobs_seg, init = self._connected_components()
-        list_blobs_ref = range(1, blobs_ref[1])
-        list_blobs_seg = range(1, blobs_seg[1])
-        mul_blobs_ref = np.multiply(blobs_ref[0], init)
-        mul_blobs_seg = np.multiply(blobs_seg[0], init)
-        list_TP_ref = np.unique(mul_blobs_ref[mul_blobs_ref > 0])
-        list_TP_seg = np.unique(mul_blobs_seg[mul_blobs_seg > 0])
-
-        list_FN = [x for x in list_blobs_ref if x not in list_TP_ref]
-        list_FP = [x for x in list_blobs_seg if x not in list_TP_seg]
-        return len(list_TP_ref), len(list_FP), len(list_FN)
-
-    def connected_errormaps(self):
-        """
-        This functions calculates the error maps from the connected components
-
-        :return:
-        """
-        blobs_ref, blobs_seg, init = self._connected_components()
-        list_blobs_ref = range(1, blobs_ref[1])
-        list_blobs_seg = range(1, blobs_seg[1])
-        mul_blobs_ref = np.multiply(blobs_ref[0], init)
-        mul_blobs_seg = np.multiply(blobs_seg[0], init)
-        list_TP_ref = np.unique(mul_blobs_ref[mul_blobs_ref > 0])
-        list_TP_seg = np.unique(mul_blobs_seg[mul_blobs_seg > 0])
-
-        list_FN = [x for x in list_blobs_ref if x not in list_TP_ref]
-        list_FP = [x for x in list_blobs_seg if x not in list_TP_seg]
-        # print(np.max(blobs_ref),np.max(blobs_seg))
-        tpc_map = np.zeros_like(blobs_ref[0])
-        fpc_map = np.zeros_like(blobs_ref[0])
-        fnc_map = np.zeros_like(blobs_ref[0])
-        for i in list_TP_ref:
-            tpc_map[blobs_ref[0] == i] = 1
-        for i in list_TP_seg:
-            tpc_map[blobs_seg[0] == i] = 1
-        for i in list_FN:
-            fnc_map[blobs_ref[0] == i] = 1
-        for i in list_FP:
-            fpc_map[blobs_seg[0] == i] = 1
-        return tpc_map, fnc_map, fpc_map
-
-    def outline_error(self):
-        """
-        This function calculates the outline error as defined in Wack et al.
-
-        :return: OER: Outline error ratio, OEFP: number of false positive
-            outlier error voxels, OEFN: number of false negative outline error
-            elements
-        """
-        TPcMap, _, _ = self.connected_errormaps()
-        OEFMap = self.ref - np.multiply(TPcMap, self.seg)
-        unique, counts = np.unique(OEFMap, return_counts=True)
-        # print(counts)
-        OEFN = counts[unique == 1]
-        OEFP = counts[unique == -1]
-        OEFN = 0 if len(OEFN) == 0 else OEFN[0]
-        OEFP = 0 if len(OEFP) == 0 else OEFP[0]
-        OER = 2 * (OEFN + OEFP) / (self.n_pos_seg() + self.n_pos_ref())
-        return OER, OEFP, OEFN
-
-    def detection_error(self):
-        """
-        This function calculates the volume of detection error as defined in
-        Wack et al.
-
-        :return: DE: Total volume of detection error, DEFP: Detection error
-            false positives, DEFN: Detection error false negatives
-        """
-        TPcMap, FNcMap, FPcMap = self.connected_errormaps()
-        DEFN = np.sum(FNcMap)
-        DEFP = np.sum(FPcMap)
-        return DEFN + DEFP, DEFP, DEFN
-
-    def header_str(self):
-        result_str = [self.m_dict[key][1] for key in self.measures]
-        result_str = ',' + ','.join(result_str)
-        return result_str
-
-    def to_string(self, fmt='{:.4f}'):
-        result_str = ""
-        list_space = ['com_ref', 'com_seg', 'list_labels']
-        for key in self.measures:
-            result = self.m_dict[key][0]()
-            if key in list_space:
-                result_str += ' '.join(fmt.format(x) for x in result) \
-                    if isinstance(result, tuple) else fmt.format(result)
-            else:
-                result_str += ','.join(fmt.format(x) for x in result) \
-                    if isinstance(result, tuple) else fmt.format(result)
-            result_str += ','
-        return result_str[:-1]  # trim the last comma
-
-
-class PairwiseMeasuresRegression(object):
-    def __init__(self, reg_img, ref_img, measures=None):
-        self.reg = reg_img
-        self.ref = ref_img
-        self.measures = measures
-
-        self.m_dict = {
-            'mse': (self.mse, 'MSE'),
-            'rmse': (self.rmse, 'RMSE'),
-            'mae': (self.mae, 'MAE'),
-            'r2': (self.r2, 'R2')
-        }
-
-    def mse(self):
-        return np.mean(np.square(self.reg - self.ref))
-
-    def rmse(self):
-        return np.sqrt(self.mse())
-
-    def mae(self):
-        return np.mean(np.abs(self.ref - self.reg))
-
-    def r2(self):
-        ref_var = np.sum(np.square(self.ref - np.mean(self.ref)))
-        reg_var = np.sum(np.square(self.reg - np.mean(self.reg)))
-        cov_refreg = np.sum(
-            (self.reg - np.mean(self.reg)) * (self.ref - np.mean(
-                self.ref)))
-        return np.square(cov_refreg / np.sqrt(ref_var * reg_var + 0.00001))
-
-    def header_str(self):
-        result_str = [self.m_dict[key][1] for key in self.measures]
-        result_str = ',' + ','.join(result_str)
-        return result_str
-
-    def to_string(self, fmt='{:.4f}'):
-        result_str = ""
-        for key in self.measures:
-            result = self.m_dict[key][0]()
-            result_str += ','.join(fmt.format(x) for x in result) \
-                if isinstance(result, tuple) else fmt.format(result)
-            result_str += ','
-        return result_str[:-1]  # trim the last comma
 
 
 def soft_dice_score(y_true, y_pred, epsilon=1e-6):
@@ -532,20 +94,6 @@ parser.add_argument("--num_unc_passes", type=int, default=20)
 parser.add_argument('--generation_type', type=strUpper, nargs='?', default='MPRAGE')
 # parser.add_argument('--resolution', type=int)
 arguments = parser.parse_args()
-
-
-if True:
-    config = runai.hpo.pick(
-    grid=dict(stratification_epsilon=[0.1, 1, 10, 50, 100],
-    #         batch_size=[32, 64, 128],
-    #         lr=[0.1, 0.01, 0.001],
-    #         aug=[0.1, 0.2, 0.3],
-    #         chns=[64, 128, 256],
-              dropout=[0.5]),
-    strategy=strategy)
-else:
-    config = dict(stratification_epsilon=arguments.stratification_epsilon,
-                  dropout=arguments.dropout_level)
 
 
 def BespokeDataset(df, transform, patch_size, batch_seed, train=True, queue_length=4):
@@ -784,7 +332,7 @@ regex = re.compile(r'\d+')
 # Physics specific parameters
 physics_flag = arguments.physics_flag
 uncertainty_flag = arguments.uncertainty_flag
-dropout_level = config['dropout']
+dropout_level = arguments.dropout_level
 f'Physics is {physics_flag},  Uncertainty is {uncertainty_flag}'
 physics_experiment_type = arguments.generation_type
 print(f'The experiment type is {physics_experiment_type}')
@@ -903,7 +451,7 @@ if LOAD and num_files > 0:
     loaded_epoch = checkpoint['epoch']
     loss = checkpoint['loss']
     running_iter = checkpoint['running_iter']
-    EPOCHS = 91
+    EPOCHS = 81
 
     # Memory related variables
     batch_size = checkpoint['batch_size']
@@ -912,12 +460,12 @@ if LOAD and num_files > 0:
     samples_per_volume = 1
 else:
     running_iter = 0
-    loaded_epoch = -1
-    EPOCHS = 91
+    loaded_epoch = 0
+    EPOCHS = 81
 
     # Memory related variables
     patch_size = arguments.patch_size
-    batch_size = 4
+    batch_size = 1
     queue_length = batch_size
     samples_per_volume = 1
 
@@ -931,8 +479,7 @@ if uncertainty_flag:
 training_modes = ['standard', 'stratification', 'kld', 'inference']
 training_mode = arguments.experiment_mode
 print(f'The training mode is {training_mode}')
-stratification_epsilon = config['stratification_epsilon']
-print(f'The stratification epsilon is {stratification_epsilon}')
+stratification_epsilon = arguments.stratification_epsilon
 
 # Some necessary variables
 dataset_csv = arguments.csv_label
@@ -940,7 +487,7 @@ img_dir = arguments.images_dir  # '/nfs/home/pedro/COVID/Data/KCH_CXR_JPG'
 label_dir = arguments.labels_dir  # '/nfs/home/pedro/COVID/Labels/KCH_CXR_JPG.csv'
 print(img_dir)
 print(label_dir)
-val_batch_size = 4
+val_batch_size = 1
 
 
 # Read csv + add directory to filenames
@@ -948,7 +495,7 @@ df = pd.read_csv(dataset_csv)
 df['Label_Filename'] = df['Filename']
 df['Filename'] = img_dir + '/' + df['Filename'].astype(str)
 df['Label_Filename'] = label_dir + '/' + 'Label_' + df['Label_Filename'].astype(str)
-num_folds = 1  #df.fold.nunique()
+num_folds = df.fold.nunique()
 
 # OOD csv
 OOD_df = pd.read_csv('/nfs/home/pedro/PhysicsPyTorch/OOD_physics_csv_folds_limited.csv')
@@ -974,7 +521,7 @@ if arguments.generation_type == 'MPRAGE':
         # porchio.RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
         # porchio.RandomMotion(),
         # porchio.HistogramStandardization({MRI: landmarks}),
-        porchio.RandomMPRAGE(TI=(0.6, 1.2), p=1),
+        porchio.RandomMPRAGE(TI=(0.6, 1.2), p=1, batch_generation=4),
         # porchio.RandomBiasField(coefficients=0.2),  # Bias field coeffs: Default 0.5 may be a bit too high!
         porchio.ZNormalization(masking_method=None),  # This is whitening
         # porchio.RandomNoise(std=(0, 0.1)),
@@ -988,7 +535,7 @@ if arguments.generation_type == 'MPRAGE':
     ])
 
     validation_transform = porchio.Compose([
-        porchio.RandomMPRAGE(TI=(0.6, 1.2), p=1),
+        porchio.RandomMPRAGE(TI=(0.6, 1.2), p=1, batch_generation=4),
         porchio.ZNormalization(masking_method=None),
         # porchio.ToCanonical(),
         # porchio.Resample((4, 4, 4)),
@@ -1006,10 +553,10 @@ elif arguments.generation_type == 'SPGR':
         # porchio.RescaleIntensity((0, 1)),  # so that there are no negative values for RandomMotion
         # porchio.RandomMotion(),
         # porchio.HistogramStandardization({MRI: landmarks}),
-        porchio.RandomSPGR(TR=(0.005, 2.0),
-                           TE=(0.005, 0.1),
+        porchio.RandomSPGR(TR=(0.005, 0.1),
+                           TE=(0.004, 0.01),
                            FA=(5.0, 90.0),
-                           p=1),
+                           p=1, batch_generation=4),
         # porchio.RandomBiasField(coefficients=0.2),  # Bias field coeffs: Default 0.5 may be a bit too high!
         porchio.ZNormalization(masking_method=None),  # This is whitening
         # porchio.RandomNoise(std=(0, 0.1)),
@@ -1023,10 +570,10 @@ elif arguments.generation_type == 'SPGR':
     ])
 
     validation_transform = porchio.Compose([
-        porchio.RandomSPGR(TR=(0.005, 2.0),
-                           TE=(0.005, 0.1),
+        porchio.RandomSPGR(TR=(0.005, 0.1),
+                           TE=(0.004, 0.01),
                            FA=(5.0, 90.0),
-                           p=1),
+                           p=1, batch_generation=4),
         porchio.ZNormalization(masking_method=None),
         # porchio.ToCanonical(),
         # porchio.Resample((4, 4, 4)),
@@ -1034,10 +581,14 @@ elif arguments.generation_type == 'SPGR':
     ])
 
     inference_transform = porchio.Compose([
-        porchio.RandomSPGR(TR=(0.005, 2.0),
-                           TE=(0.005, 0.1),
+        porchio.RandomSPGR(TR=(0.005, 0.1),
+                           TE=(0.004, 0.01),
                            FA=(5.0, 90.0),
-                           p=1),
+                           p=1, batch_generation=4),
+        # porchio.RandomSPGR(TR=(0.005, 2.0),
+        #                    TE=(0.005, 0.1),
+        #                    FA=(5.0, 90.0),
+        #                    p=1, batch_generation=4),
         porchio.ZNormalization(masking_method=None),
         # porchio.ToCanonical(),
         # porchio.Resample((4, 4, 4)),
@@ -1092,8 +643,11 @@ if LOAD and num_files > 0 and pretrained_checker:
     print(f'The latest epoch is {latest_epoch}, the loaded epoch is {loaded_epoch}')
     assert latest_epoch == loaded_epoch
 else:
-    latest_epoch = -1
-    latest_fold = 0
+    latest_epoch = 0
+    latest_fold = 1
+
+# if arguments.fold_override:
+#     latest_fold = arguments.fold_override
 
 print(f'\nStarted {training_mode}-ing!')
 loop_switch = True
@@ -1240,15 +794,19 @@ for fold in range(latest_fold, num_folds):
                     if i != 0:
                         print(f'The time between iterations was {time.time() - start}')
                     start = time.time()
-                    images = sample['mri']['data'].cuda()
+                    images = sample['mri']['data'].cuda().squeeze()[:, None, ...]
                     labels = sample['seg']['data'].cuda()
+                    # print(f'The pre-labels shapes are {labels.shape}')
                     physics = sample['physics'].cuda().float().squeeze()
                     names = sample['mri']['path']
                     names = [os.path.basename(name) for name in names]
-
+                    if batch_size == 1:
+                        labels = torch.cat(4*[labels])
+                        names = names * 4
                     # print(f'The physics are {physics}')
                     # print(f'The physics shapes are {physics.shape}')
                     # print(f'The image shapes are {images.shape}')
+                    # print(f'The labels shapes are {labels.shape}')
                     # print(f'The names are {names}')
                     # Need to replace names to include physics (3 decimal points should suffice)
                     new_names = []
@@ -1394,23 +952,28 @@ for fold in range(latest_fold, num_folds):
                 if epoch % validation_interval == 0:
                     with torch.no_grad():
                         for val_sample in val_loader:
-                            val_images = val_sample['mri']['data'].squeeze().cuda()
+                            val_images = val_sample['mri']['data'].cuda().squeeze()[:, None, ...]
                             val_names = val_sample['mri']['path']
+                            val_names = [os.path.basename(val_name) for val_name in val_names]
                             # Readjust dimensions to match expected shape for network
                             # if len(val_images.shape) == 3:
                             #     val_images = torch.unsqueeze(torch.unsqueeze(val_images, 0), 0)
                             # elif len(val_images.shape) == 4:
                             #     val_images = torch.unsqueeze(val_images, 0)
-                            val_labels = val_sample['seg']['data'].squeeze().cuda()
+                            val_labels = val_sample['seg']['data'].cuda()
                             # print(f'val_images shape is {val_images.shape}')
                             # print(f'val_labels shape is {val_labels.shape}')
                             # Readjust dimensions to match expected shape
+                            if val_batch_size == 1:
+                                val_labels = torch.cat(4 * [val_labels])
+                                val_names = val_names * 4
                             if len(val_labels.shape) == 4:
                                 val_labels = torch.unsqueeze(val_labels, 1)
                             if len(val_images.shape) == 4:
                                 val_images = torch.unsqueeze(val_images, 1)
                             val_physics = val_sample['physics'].squeeze().cuda().float()
-                            val_names = [os.path.basename(val_name) for val_name in val_names]
+
+                            # print(f'Val time: Images: {val_images.shape} Labels {val_labels.shape}')
 
                             new_names = []
                             affine_array = np.array([[-1, 0, 0, 89],
@@ -1482,7 +1045,7 @@ for fold in range(latest_fold, num_folds):
                             # Calculate CoVs
                             gm_volume_np = gm_volume.cpu().detach().numpy()
                             val_CoV = np.std(gm_volume_np) / np.mean(gm_volume_np)
-                            for i in range(val_batch_size):
+                            for i in range(val_images.shape[0]):
                                 pGM_dice = soft_dice_score(val_labels[i, ...].cpu().detach().numpy(), out[i, ...].cpu().detach().numpy())
                                 metric_collector += [pGM_dice.tolist()]
                                 CoV_collector.append(val_CoV)
@@ -1594,19 +1157,10 @@ for fold in range(latest_fold, num_folds):
                                     'overall_val_names': overall_val_names,
                                     'overall_val_metric': overall_val_metric}, MODEL_PATH)
 
-                    print(type(metric_collector), type(CoV_collector))
-                    print(np.mean(metric_collector), np.mean(CoV_collector), np.std(metric_collector), np.mean(metric_collector) - 4 * np.mean(
-                                                               CoV_collector))
-                    runai.hpo.report(epoch=epoch, metrics={'val_dice_std': np.std(metric_collector).tolist(),
-                                                           'val_dice': np.mean(metric_collector).tolist(),
-                                                           'val_cov': np.mean(CoV_collector).tolist(),
-                                                           'val_cov_dice': np.mean(metric_collector).tolist() - 4 * np.mean(
-                                                               CoV_collector).tolist()})
-
                     # Early stopping
                     early_stopping((np.mean(metric_collector)-val_batch_size*np.mean(CoV_collector)), model)
 
-                    if early_stopping.early_stop or epoch == 60:
+                    if early_stopping.early_stop or epoch == EPOCHS - 1:
                         # Set overalls to best epoch
                         best_epoch = int(np.argmax(running_val_metric))
                         print(f'The best epoch is Epoch {best_epoch}')
@@ -1615,6 +1169,8 @@ for fold in range(latest_fold, num_folds):
                         overall_gm_volumes.extend(running_gm_volumes[best_epoch])
                         overall_gm_volumes2.extend(running_gm_volumes2[best_epoch])
 
+                        if not os.path.exists(os.path.join(SAVE_PATH, f"Best_epoch_{best_epoch}")):
+                            os.makedirs(os.path.join(SAVE_PATH, f"Best_epoch_{best_epoch}"))
                         # f = open(os.path.join(SAVE_PATH, f"Best_epoch_{best_epoch}.txt", "x"))
                         # f.write(" Created file")
                         # f.close()
@@ -1833,8 +1389,7 @@ for fold in range(latest_fold, num_folds):
                     break
 
         # Now that this fold's training has ended, want starting points of next fold to reset
-        latest_epoch = -1
-        latest_fold = 0
+        latest_epoch = 0
         running_iter = 0
         loaded_epoch = 0
 
@@ -1853,10 +1408,7 @@ overall_gm_volumes = np.array(overall_gm_volumes)
 overall_gm_volumes2 = np.array(overall_gm_volumes2)
 print(overall_val_names)
 # Problem is likely in here!
-try:
-    overall_subject_ids = [int(vn[0].rsplit('.nii.gz')[0].split('_')[3]) for vn in overall_val_names]
-except:
-    overall_subject_ids = [int(vn.rsplit('.nii.gz')[0].split('_')[3]) for vn in overall_val_names]
+overall_subject_ids = [int(vn[0].rsplit('.nii.gz')[0].split('_')[3]) for vn in overall_val_names]
 
 # Folds analysis
 print('Names', len(overall_val_names), 'Dice', len(overall_val_metric), 'GM volumes', len(overall_gm_volumes))
@@ -1885,11 +1437,4 @@ cov_sub = pd.DataFrame({"subject_id": list(range(sub.subject_id.nunique())),
                         "subject_dice": subject_dice,
                         "subject_CoVs": subject_CoVs})
 print(f"The mean and std of all subject CoVs is: {np.mean(subject_CoVs)}, {np.std(subject_CoVs)}")
-
-# HPO logging
-runai.hpo.report(epoch=best_epoch, metrics={'val_dice_std': np.std(overall_val_metric),
-                                            'val_dice': np.mean(overall_val_metric),
-                                            'val_cov': np.mean(subject_CoVs),
-                                            'val_cov_dice': np.mean(overall_val_metric)-4*np.mean(subject_CoVs)})
-
 print('Finished!')

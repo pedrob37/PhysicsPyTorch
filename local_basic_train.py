@@ -350,7 +350,7 @@ overall_val_metric = []
 overall_gm_volumes = []
 
 
-print('\nStarting training!')
+print(f'\nStarted {training_mode}-ing!')
 for fold in range(num_folds):
     print('\nFOLD', fold)
     # Pre-loading sequence
@@ -409,7 +409,7 @@ for fold in range(num_folds):
     print(f'The length of the validation is {len(inf_df)}')
 
     model.cuda()
-    print('\nStarting training!')
+    print(f'\nStarted {training_mode}-ing!')
     for epoch in range(0, EPOCHS):
         print('Training Epoch')
         running_loss = 0.0
