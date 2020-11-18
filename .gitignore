@@ -105,7 +105,9 @@ ENV/
 input/
 saved/
 #datasets/
-
+*.png
+*.nii.gz
+*.npy
 # editor, os cache directory
 .vscode/
 .idea/
